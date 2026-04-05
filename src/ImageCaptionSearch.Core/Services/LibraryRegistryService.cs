@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,20 +13,20 @@ namespace ImageCaptionSearch.Core.Services;
 
 public class LibraryRegistryService : ILibraryRegistryService
 {
-    private static readonly string AppDataPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "ImageCaptionSearch"
-    );
-
-    private static readonly string RegistryFilePath = Path.Combine(AppDataPath, "registry.json");
-
+    private readonly string _appDataPath;
+    private readonly string _registryFilePath;
     private readonly SemaphoreSlim _lock = new(1, 1);
     private RegistryData? _cache;
     private readonly ILibraryService _libraryService;
 
-    public LibraryRegistryService(ILibraryService libraryService)
+    public LibraryRegistryService(ILibraryService libraryService, string? customAppDataPath = null)
     {
         _libraryService = libraryService;
+        _appDataPath = customAppDataPath ?? Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "ImageCaptionSearch"
+        );
+        _registryFilePath = Path.Combine(_appDataPath, "registry.json");
     }
 
     private async Task EnsureInitializedAsync(CancellationToken ct)
@@ -37,19 +38,19 @@ public class LibraryRegistryService : ILibraryRegistryService
         {
             if (_cache != null) return;
 
-            if (!Directory.Exists(AppDataPath))
+            if (!Directory.Exists(_appDataPath))
             {
-                Directory.CreateDirectory(AppDataPath);
+                Directory.CreateDirectory(_appDataPath);
             }
 
-            if (!File.Exists(RegistryFilePath))
+            if (!File.Exists(_registryFilePath))
             {
                 _cache = new RegistryData();
                 await SaveAsync(ct);
             }
             else
             {
-                var json = await File.ReadAllTextAsync(RegistryFilePath, ct);
+                var json = await File.ReadAllTextAsync(_registryFilePath, ct);
                 _cache = JsonSerializer.Deserialize<RegistryData>(json) ?? new RegistryData();
             }
         }
@@ -63,7 +64,7 @@ public class LibraryRegistryService : ILibraryRegistryService
     {
         if (_cache == null) return;
         var json = JsonSerializer.Serialize(_cache, new JsonSerializerOptions { WriteIndented = true });
-        await File.WriteAllTextAsync(RegistryFilePath, json, ct);
+        await File.WriteAllTextAsync(_registryFilePath, json, ct);
     }
 
     public async Task<IReadOnlyList<Library>> GetLibrariesAsync(CancellationToken ct = default)
@@ -238,7 +239,7 @@ public class LibraryRegistryService : ILibraryRegistryService
         return false;
     }
 
-    private class RegistryData
+    private sealed class RegistryData
     {
         public List<Library> Libraries { get; set; } = new();
         public Guid? LastOpenedLibraryId { get; set; }
