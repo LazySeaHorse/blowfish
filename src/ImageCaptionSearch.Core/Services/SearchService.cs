@@ -114,7 +114,7 @@ public class SearchService : ISearchService
 
         // 1. Get query embedding
         var settings = await _settingsService.GetSettingsAsync(ct);
-        var queryEmbedding = await _embeddingService.GenerateEmbeddingAsync("query", query.QueryText, settings, ct);
+        var queryEmbedding = await _embeddingService.GenerateEmbeddingAsync("query", query.QueryText, settings, true, ct);
 
         // 2. Load all embeddings for this model
         var embeddings = await _libraryService.GetEmbeddingsAsync(library, queryEmbedding.ModelName, ct);

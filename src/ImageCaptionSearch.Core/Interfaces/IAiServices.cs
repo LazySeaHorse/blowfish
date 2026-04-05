@@ -9,5 +9,5 @@ public interface ICaptionService
 
 public interface IEmbeddingService
 {
-    Task<EmbeddingRecord> GenerateEmbeddingAsync(string parentId, string text, AppSettings settings, CancellationToken ct = default);
+    Task<EmbeddingRecord> GenerateEmbeddingAsync(string parentId, string text, AppSettings settings, bool highPriority = false, CancellationToken ct = default);
 }

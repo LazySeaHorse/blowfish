@@ -6,6 +6,6 @@ public interface ILmStudioClient
 {
     Task<bool> TestConnectionAsync(string baseUrl, CancellationToken ct = default);
     Task<IReadOnlyList<LmModelItem>> GetModelsAsync(string baseUrl, CancellationToken ct = default);
-    Task<string> GetChatCompletionAsync(string baseUrl, string modelId, string prompt, byte[]? imageBytes = null, CancellationToken ct = default);
-    Task<float[]> GetEmbeddingAsync(string baseUrl, string modelId, string text, CancellationToken ct = default);
+    Task<string> GetChatCompletionAsync(string baseUrl, string modelId, string prompt, byte[]? imageBytes = null, bool highPriority = false, CancellationToken ct = default);
+    Task<float[]> GetEmbeddingAsync(string baseUrl, string modelId, string text, bool highPriority = false, CancellationToken ct = default);
 }

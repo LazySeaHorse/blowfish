@@ -82,9 +82,19 @@ public class PipelineTests
             .ReturnsAsync(new List<ImageRecord>());
         _mockScan.Setup(s => s.ScanAsync(It.IsAny<string>(), It.IsAny<IReadOnlyList<ImageRecord>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ScanResult(new List<ImageRecord> { image }, new List<ImageRecord>(), new List<string>()));
+        _mockLibrary.Setup(l => l.UpsertImagesAsync(It.IsAny<Library>(), It.IsAny<IEnumerable<ImageRecord>>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _mockLibrary.Setup(l => l.SaveEmbeddingAsync(It.IsAny<Library>(), It.IsAny<EmbeddingRecord>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         _mockThumbnail.Setup(t => t.GetImageDimensionsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ImageDimensions(100, 100));
+        _mockThumbnail.Setup(t => t.GenerateThumbnailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _mockCaption.Setup(c => c.GenerateCaptionAsync(It.IsAny<string>(), It.IsAny<ImageRecord>(), It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CaptionRecord("id1", "cat", "{}", false, "v", "1", DateTime.UtcNow));
+        _mockEmbedding.Setup(e => e.GenerateEmbeddingAsync("id1", "cat", It.IsAny<AppSettings>(), false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new EmbeddingRecord("id1", "em", 2, new float[] { 0, 0 }, 0, DateTime.UtcNow));
 
         // Act
         await _pipeline.StartAsync(_testLib.Id, CancellationToken.None);

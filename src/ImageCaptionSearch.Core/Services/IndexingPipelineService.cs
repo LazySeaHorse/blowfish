@@ -170,7 +170,7 @@ public class IndexingPipelineService : IIndexingPipelineService
                     var text = item.CaptionText;
                     if (!string.IsNullOrEmpty(text))
                     {
-                        var embedding = await _embeddingService.GenerateEmbeddingAsync(item.Image.Id, text, settings, token);
+                        var embedding = await _embeddingService.GenerateEmbeddingAsync(item.Image.Id, text, settings, false, token);
                         await _libraryService.SaveEmbeddingAsync(library, embedding, token);
                     }
 

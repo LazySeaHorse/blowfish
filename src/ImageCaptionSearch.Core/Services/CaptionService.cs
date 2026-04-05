@@ -37,6 +37,7 @@ public class CaptionService : ICaptionService
             settings.VisionModelId, 
             prompt, 
             imageBytes, 
+            false,
             ct);
 
         try 
