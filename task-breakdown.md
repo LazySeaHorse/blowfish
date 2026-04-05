@@ -59,8 +59,8 @@ The goal is to have a minimally usable app as early as possible:
 |---|---|---:|---|
 | M0 | Repo bootstrap and guardrails | none | Solution, projects, analyzers, policy checks | [x] |
 | M1 | Core domain and app shell | M0 | Core abstractions, Avalonia shell | [x] |
-| M2 | Library registry and DB creation | M1 | Add/open/remove library, DB initialization | [ ] |
-| M3 | Scanning and thumbnails | M2 | File discovery, metadata, thumbnails |
+| M2 | Library registry and DB creation | M1 | Add/open/remove library, DB initialization | [x] |
+| M3 | Scanning and thumbnails | M2 | File discovery, metadata, thumbnails | [ ] |
 | M4 | LM Studio integration | M2 | Connection, model listing, captioning, embeddings |
 | M5 | Persistence and search engine | M3, M4 | Caption DB, vector DB, FTS, cosine search |
 | M6 | Indexing pipeline | M3, M4, M5 | TPL Dataflow queue, retries, progress |
@@ -239,7 +239,7 @@ Interfaces such as:
 
 ## M2. Library Registry and DB Creation
 
-### T007. Implement app-level library registry
+### [x] T007. Implement app-level library registry
 **Goal:** Track known libraries under `%LocalAppData%\ImageCaptionSearch\`.
 
 **Deliverables**
@@ -264,7 +264,7 @@ Interfaces such as:
 
 ---
 
-### T008. Validate library roots and prevent nesting
+### [x] T008. Validate library roots and prevent nesting
 **Goal:** Enforce library rules from the spec.
 
 **Deliverables**
@@ -284,7 +284,7 @@ Interfaces such as:
 
 ---
 
-### T009. Create per-library internal storage folder
+### [x] T009. Create per-library internal storage folder
 **Goal:** Initialize `.imagecaptionsearch` inside each library root.
 
 **Deliverables**
@@ -305,7 +305,7 @@ Interfaces such as:
 
 ---
 
-### T010. Implement DB creation and schema migrations
+### [x] T010. Implement DB creation and schema migrations
 **Goal:** Create `catalog.db` and `vectors.db` with versioned migrations.
 
 **Deliverables**
