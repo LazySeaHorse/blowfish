@@ -46,39 +46,39 @@ public class LmStudioClient : ILmStudioClient
         try
         {
             var url = $"{baseUrl.TrimEnd('/')}/v1/chat/completions";
-        
-        var contentList = new List<object>
-        {
-            new { type = "text", text = prompt }
-        };
+            
+            var contentList = new List<object>
+            {
+                new { type = "text", text = prompt }
+            };
 
-        if (imageBytes != null)
-        {
-            contentList.Add(new 
-            { 
-                type = "image_url", 
-                image_url = new { url = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}" } 
-            });
-        }
+            if (imageBytes != null)
+            {
+                contentList.Add(new 
+                { 
+                    type = "image_url", 
+                    image_url = new { url = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}" } 
+                });
+            }
 
-        var messages = new[]
-        {
-            new { role = "user", content = contentList }
-        };
+            var messages = new[]
+            {
+                new { role = "user", content = contentList }
+            };
 
-        var requestBody = new
-        {
-            model = modelId,
-            messages = messages,
-            temperature = 0.0,
-            response_format = new { type = "json_object" }
-        };
+            var requestBody = new
+            {
+                model = modelId,
+                messages = messages,
+                temperature = 0.0,
+                response_format = new { type = "json_object" }
+            };
 
-        var response = await _httpClient.PostAsJsonAsync(url, requestBody, ct);
-        response.EnsureSuccessStatusCode();
-        
-        var result = await response.Content.ReadFromJsonAsync<ChatCompletionResponse>(ct);
-        return result?.Choices?[0]?.Message?.Content ?? throw new InvalidOperationException("Empty response from LM Studio.");
+            var response = await _httpClient.PostAsJsonAsync(url, requestBody, ct);
+            response.EnsureSuccessStatusCode();
+            
+            var result = await response.Content.ReadFromJsonAsync<ChatCompletionResponse>(ct);
+            return result?.Choices?[0]?.Message?.Content ?? throw new InvalidOperationException("Empty response from LM Studio.");
         }
         finally
         {
