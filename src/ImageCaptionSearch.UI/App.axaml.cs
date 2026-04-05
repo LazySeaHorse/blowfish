@@ -44,16 +44,27 @@ public partial class App : Application
 
     private void ConfigureServices(ServiceCollection services)
     {
+        // Infrastructure
+        services.AddHttpClient<ILmStudioClient, LmStudioClient>()
+                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+                {
+                    // For local development with LM Studio, sometimes timeouts are long
+                    // but we handle them via settings.
+                });
+
         // Core Services
         services.AddSingleton<ILibraryRegistryService, LibraryRegistryService>();
         services.AddSingleton<ILibraryService, LibraryService>();
         services.AddSingleton<IScanService, ScanService>();
         services.AddSingleton<IThumbnailService, ThumbnailService>();
         services.AddSingleton<IIndexingPipelineService, IndexingPipelineService>();
+        services.AddSingleton<ICaptionService, CaptionService>();
+        services.AddSingleton<IEmbeddingService, EmbeddingService>();
 
         // ViewModels
         services.AddTransient<MainWindowViewModel>();
     }
+
 
 
     private void DisableAvaloniaDataAnnotationValidation()

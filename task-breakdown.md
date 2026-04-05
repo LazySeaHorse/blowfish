@@ -62,7 +62,7 @@ The goal is to have a minimally usable app as early as possible:
 | M2 | Library registry and DB creation | M1 | Add/open/remove library, DB initialization | [x] |
 | M3 | Scanning and thumbnails | M2 | File discovery, metadata, thumbnails | [x] |
 
-| M4 | LM Studio integration | M2 | Connection, model listing, captioning, embeddings |
+| M4 | LM Studio integration | M2 | Connection, model listing, captioning, embeddings | [x] |
 | M5 | Persistence and search engine | M3, M4 | Caption DB, vector DB, FTS, cosine search |
 | M6 | Indexing pipeline | M3, M4, M5 | TPL Dataflow queue, retries, progress |
 | M7 | Search UI and detail views | M5, M6 | Usable MVP search experience |
@@ -400,7 +400,7 @@ Interfaces such as:
 
 ## M4. LM Studio Integration
 
-### T014. Implement LM Studio API client
+### [x] T014. Implement LM Studio API client
 **Goal:** Communicate with LM Studio through local OpenAI-compatible endpoints.
 
 **Deliverables**
@@ -425,7 +425,7 @@ Interfaces such as:
 
 ---
 
-### T015. Implement caption prompt builder
+### [x] T015. Implement caption prompt builder
 **Goal:** Enforce strict, deterministic JSON output.
 
 **Deliverables**
@@ -448,7 +448,7 @@ Interfaces such as:
 
 ---
 
-### T016. Implement strict JSON caption parsing
+### [x] T016. Implement strict JSON caption parsing
 **Goal:** Parse LM Studio responses deterministically.
 
 **Deliverables**
@@ -472,7 +472,7 @@ Interfaces such as:
 
 ---
 
-### T017. Implement embedding service
+### [x] T017. Implement embedding service
 **Goal:** Convert caption text into stored vectors.
 
 **Deliverables**
