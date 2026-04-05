@@ -1,0 +1,40 @@
+## [Visual Studio]
+.vs/
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## [DotNet]
+*.tmp
+*.swp
+*.[Ll]og
+.vs/
+[Bb]in/
+[Oo]bj/
+debug/
+release/
+x64/
+x86/
+build/
+node_modules/
+.DS_Store
+
+## [Avalonia]
+# Avalonia uses standard .NET output paths
+
+## [App Specific]
+.imagecaptionsearch/
+logs/
+
+## [Rider/JetBrains]
+.idea/
+*.sln.iml
+
+## [VS Code]
+.vscode/
+
+## [User specific]
+*.user

@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);CS1591;IDE0005</NoWarn>
+  </PropertyGroup>
+
+  <!-- Prevent UI references in Core -->
+  <Target Name="ValidateCoreReferences" BeforeTargets="Build" Condition="'$(ProjectName)' == 'ImageCaptionSearch.Core'">
+    <Error Condition="@(PackageReference->AnyHaveMetadataValue('Identity', 'Avalonia'))" Text="ImageCaptionSearch.Core must not reference Avalonia packages." />
+  </Target>
+</Project>

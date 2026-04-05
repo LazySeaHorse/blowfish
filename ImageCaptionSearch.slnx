@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ImageCaptionSearch.Core/ImageCaptionSearch.Core.csproj" />
+    <Project Path="src/ImageCaptionSearch.UI/ImageCaptionSearch.UI.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ImageCaptionSearch.Core.Tests/ImageCaptionSearch.Core.Tests.csproj" />
+    <Project Path="tests/ImageCaptionSearch.UI.Tests/ImageCaptionSearch.UI.Tests.csproj" />
+  </Folder>
+</Solution>

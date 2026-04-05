@@ -1,0 +1,30 @@
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+end_of_line = crlf
+
+[*.cs]
+# Default severity for all rules
+dotnet_analyzer_diagnostic.severity = warning
+
+# Core editorconfig rules
+dotnet_separate_import_directive_groups = false
+dotnet_sort_system_usings_first = true
+csharp_using_directive_placement = outside_namespace : warning
+csharp_prefer_simple_using_statement = true : suggestion
+csharp_style_namespace_declarations = block_scoped : suggestion
+csharp_style_expression_bodied_methods = false : silent
+csharp_style_expression_bodied_constructors = false : silent
+csharp_style_expression_bodied_properties = true : suggestion
+
+# Nullable rules
+dotnet_diagnostic.CS8600.severity = warning
+dotnet_diagnostic.CS8601.severity = warning
+dotnet_diagnostic.CS8602.severity = warning
+dotnet_diagnostic.CS8603.severity = warning
+dotnet_diagnostic.CS8604.severity = warning
+dotnet_diagnostic.CS8618.severity = warning
