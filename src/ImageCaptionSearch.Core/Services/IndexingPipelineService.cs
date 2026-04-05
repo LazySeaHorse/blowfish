@@ -170,7 +170,7 @@ public class IndexingPipelineService : IIndexingPipelineService
                     var text = item.CaptionText;
                     if (!string.IsNullOrEmpty(text))
                     {
-                        var embedding = await _embeddingService.GenerateEmbeddingAsync(item.Image.Id, text, settings, token);
+                        var embedding = await _embeddingService.GenerateEmbeddingAsync(item.Image.Id, text, settings, false, token);
                         await _libraryService.SaveEmbeddingAsync(library, embedding, token);
                     }
 
@@ -264,5 +264,5 @@ public class IndexingPipelineService : IIndexingPipelineService
 
     private void NotifyProgress() => ProgressChanged?.Invoke(this, _progress);
 
-    private record PipelineItem(ImageRecord Image, string? CaptionText = null);
+    private sealed record PipelineItem(ImageRecord Image, string? CaptionText = null);
 }

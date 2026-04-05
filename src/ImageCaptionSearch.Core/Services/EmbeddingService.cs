@@ -15,7 +15,7 @@ public class EmbeddingService : IEmbeddingService
         _client = client;
     }
 
-    public async Task<EmbeddingRecord> GenerateEmbeddingAsync(string parentId, string text, AppSettings settings, CancellationToken ct = default)
+    public async Task<EmbeddingRecord> GenerateEmbeddingAsync(string parentId, string text, AppSettings settings, bool highPriority = false, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(settings.EmbeddingModelId)) 
             throw new InvalidOperationException("Embedding model not selected in settings.");
@@ -24,6 +24,7 @@ public class EmbeddingService : IEmbeddingService
             settings.LmStudioBaseUrl, 
             settings.EmbeddingModelId, 
             text, 
+            highPriority,
             ct);
 
         // Precompute norm for fast cosine similarity: sum of squares

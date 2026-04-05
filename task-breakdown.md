@@ -65,7 +65,7 @@ The goal is to have a minimally usable app as early as possible:
 | M4 | LM Studio integration | M2 | Connection, model listing, captioning, embeddings | [x] |
 | M5 | Persistence and search engine | M3, M4 | Caption DB, vector DB, FTS, cosine search | [x] |
 | M6 | Indexing pipeline | M3, M4, M5 | TPL Dataflow queue, retries, progress | [x] |
-| M7 | Search UI and detail views | M5, M6 | Usable MVP search experience |
+| M7 | Search UI and detail views | M5, M6 | Usable MVP search experience | [x] |
 | M8 | Face pipeline | M4, M5, M6 | Gated face embeddings and similar-face search |
 | M9 | Settings, resiliency, logging | M2-M8 | Restart safety, validation, diagnostics |
 | M10 | CI/CD and packaging | M0-M9 | GitHub Actions build/test/package/release |
@@ -655,7 +655,7 @@ Interfaces such as:
 
 ---
 
-### T025. Prioritize interactive search over background indexing
+### [x] T025. Prioritize interactive search over background indexing
 **Goal:** Prevent background indexing from making search unusable.
 
 **Deliverables**
@@ -673,7 +673,7 @@ Interfaces such as:
 
 ## M7. Search UI and Detail Views
 
-### T026. Implement Library Home screen
+### [x] T026. Implement Library Home screen
 **Goal:** Let the user manage libraries clearly.
 
 **Deliverables**
@@ -698,7 +698,7 @@ Interfaces such as:
 
 ---
 
-### T027. Implement Library Detail screen
+### [x] T027. Implement Library Detail screen
 **Goal:** Provide the main search and indexing workspace.
 
 **Deliverables**
@@ -725,7 +725,7 @@ Interfaces such as:
 
 ---
 
-### T028. Implement result grid with virtualization/incremental loading
+### [x] T028. Implement result grid with virtualization/incremental loading
 **Goal:** Display many items efficiently.
 
 **Deliverables**
@@ -748,7 +748,7 @@ Interfaces such as:
 
 ---
 
-### T029. Implement Image Detail view
+### [x] T029. Implement Image Detail view
 **Goal:** Give users a focused inspection screen for one image.
 
 **Deliverables**

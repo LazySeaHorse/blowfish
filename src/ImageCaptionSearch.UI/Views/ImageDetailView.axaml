@@ -1,0 +1,83 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ImageCaptionSearch.UI.ViewModels"
+             xmlns:conv="using:ImageCaptionSearch.UI.Converters"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+             x:Class="ImageCaptionSearch.UI.Views.ImageDetailView"
+             x:DataType="vm:ImageDetailViewModel">
+
+    <UserControl.Resources>
+        <conv:BitmapValueConverter x:Key="BitmapConverter" />
+    </UserControl.Resources>
+
+    <Grid ColumnDefinitions="*,360">
+        
+        <!-- Image Area -->
+        <Border Background="#1a1a1a" Padding="40">
+            <Grid RowDefinitions="Auto,*">
+                <!-- Toolbar overlay -->
+                <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Left" Margin="0,0,0,20">
+                    <Button Command="{Binding NavigateBackCommand}" 
+                            Background="#33ffffff" Padding="12" CornerRadius="20">
+                         <PathIcon Data="{StaticResource FolderIcon}" Width="16" Height="16" Foreground="White"/>
+                    </Button>
+                </StackPanel>
+
+                <Image Grid.Row="1" Source="{Binding Result.ImagePath, Converter={StaticResource BitmapConverter}}" 
+                       Stretch="Uniform" />
+            </Grid>
+        </Border>
+
+        <!-- Right Panel - Info -->
+        <Border Grid.Column="1" Background="White" BorderBrush="#e0e0e0" BorderThickness="1,0,0,0">
+            <Grid RowDefinitions="*,Auto">
+                <ScrollViewer Padding="24">
+                    <StackPanel Spacing="32">
+                        <!-- Caption Section -->
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="Caption" FontSize="14" FontWeight="SemiBold" Foreground="#999999"/>
+                            <TextBlock Text="{Binding Result.Caption}" FontSize="18" TextWrapping="Wrap" />
+                            <Button Command="{Binding CopyCaptionCommand}" Content="Copy Caption" Padding="16,8" CornerRadius="8" Background="#f0f0f0"/>
+                        </StackPanel>
+
+                        <!-- File Section -->
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="File Details" FontSize="14" FontWeight="SemiBold" Foreground="#999999"/>
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="{Binding Result.FileName}" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding Result.ImagePath}" FontSize="12" Foreground="#666666" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Actions -->
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="Actions" FontSize="14" FontWeight="SemiBold" Foreground="#999999"/>
+                            <Button HorizontalAlignment="Stretch" Command="{Binding OpenImageCommand}" Padding="16,12" CornerRadius="8">Open in default viewer</Button>
+                            <Button HorizontalAlignment="Stretch" Command="{Binding ShowInExplorerCommand}" Padding="16,12" CornerRadius="8">Show in Explorer</Button>
+                        </StackPanel>
+
+                        <!-- AI Info -->
+                        <StackPanel Spacing="12">
+                             <TextBlock Text="Model Metadata" FontSize="14" FontWeight="SemiBold" Foreground="#999999"/>
+                             <StackPanel Orientation="Horizontal" Spacing="12">
+                                 <Border Background="#eef6ff" CornerRadius="12" Padding="12,4">
+                                     <StackPanel Orientation="Horizontal" Spacing="8">
+                                         <TextBlock Text="Has Human:" FontSize="12" Foreground="#4a90e2"/>
+                                         <TextBlock Text="{Binding Result.HasHuman}" FontSize="12" FontWeight="SemiBold" Foreground="#4a90e2"/>
+                                     </StackPanel>
+                                 </Border>
+                             </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Bottom Sticky (Similar Search) -->
+                <Border Grid.Row="1" Padding="24" Background="#f8f9fa" BorderBrush="#e0e0e0" BorderThickness="0,1,0,0">
+                     <Button HorizontalAlignment="Stretch" Classes="accent" Padding="16,16" CornerRadius="12">Find Similar Images</Button>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

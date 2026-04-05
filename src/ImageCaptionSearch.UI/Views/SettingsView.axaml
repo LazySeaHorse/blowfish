@@ -1,0 +1,91 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ImageCaptionSearch.UI.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="ImageCaptionSearch.UI.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+    <Grid RowDefinitions="Auto,*">
+        
+        <!-- Header -->
+        <Border Padding="24,24,24,0">
+            <StackPanel Orientation="Horizontal" Spacing="20">
+                <Button Command="{Binding NavigateBackCommand}" 
+                        Background="Transparent" Padding="8">
+                    <PathIcon Data="{StaticResource FolderIcon}" Width="20" Height="20" Foreground="#666666"/>
+                </Button>
+                <TextBlock Text="Settings" 
+                           FontSize="24" FontWeight="SemiBold" 
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Form Area -->
+        <ScrollViewer Grid.Row="1" Padding="48,40">
+            <StackPanel Spacing="32" MaxWidth="600" HorizontalAlignment="Left">
+                
+                <!-- LM Studio Connection -->
+                <StackPanel Spacing="16">
+                    <TextBlock Text="LM Studio Integration" FontSize="18" FontWeight="SemiBold"/>
+                    
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Local API Base URL" FontSize="14" Foreground="#666666"/>
+                        <TextBox Text="{Binding BaseUrl}" Watermark="http://127.0.0.1:1234" MaxWidth="400" HorizontalAlignment="Left"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Button Command="{Binding TestConnectionCommand}" Content="Test Connection" Padding="16,8" CornerRadius="8"/>
+                        <TextBlock Text="{Binding TestResult}" VerticalAlignment="Center" FontSize="12" Foreground="#4a90e2" IsVisible="{Binding TestResult, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <Separator />
+
+                <!-- Models -->
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Local AI Models" FontSize="18" FontWeight="SemiBold"/>
+                    
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Vision Model ID for Captioning" FontSize="14" Foreground="#666666"/>
+                        <ComboBox ItemsSource="{Binding AvailableModels}" 
+                                  SelectedItem="{Binding VisionModelId}" 
+                                  Width="400" HorizontalAlignment="Left"
+                                  PlaceholderText="Select Vision Model..."/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Embedding Model ID for Search" FontSize="14" Foreground="#666666"/>
+                        <ComboBox ItemsSource="{Binding AvailableModels}" 
+                                  SelectedItem="{Binding EmbeddingModelId}" 
+                                  Width="400" HorizontalAlignment="Left"
+                                  PlaceholderText="Select Embedding Model..."/>
+                    </StackPanel>
+
+                    <Button Command="{Binding RefreshModelsCommand}" Content="Refresh Model List" Padding="16,8" CornerRadius="8" Background="#f0f0f0"/>
+                </StackPanel>
+
+                <Separator />
+
+                <!-- Performance -->
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Performance" FontSize="18" FontWeight="SemiBold"/>
+                    
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Max LM Studio Concurrency" FontSize="14" Foreground="#666666"/>
+                        <NumericUpDown Value="{Binding MaxConcurrency}" Minimum="1" Maximum="8" Width="120" HorizontalAlignment="Left"/>
+                        <TextBlock Text="Recommended: 2 - 4 to avoid local machine slowdown." FontSize="11" Foreground="#999999"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Actions -->
+                <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,40,0,0">
+                    <Button Command="{Binding SaveCommand}" Content="Save Settings" Classes="accent" Padding="32,16" CornerRadius="8"/>
+                    <Button Command="{Binding NavigateBackCommand}" Content="Cancel" Padding="32,16" CornerRadius="8" Background="Transparent" BorderBrush="#e0e0e0" BorderThickness="1"/>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

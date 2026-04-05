@@ -12,6 +12,7 @@ namespace ImageCaptionSearch.Core.Services;
 public class LmStudioClient : ILmStudioClient
 {
     private readonly HttpClient _httpClient;
+    private readonly SemaphoreSlim _sharedLock = new(8, 8); // Max allowed in spec
 
     public LmStudioClient(HttpClient httpClient)
     {
@@ -39,9 +40,12 @@ public class LmStudioClient : ILmStudioClient
         return (IReadOnlyList<LmModelItem>?)result?.Data ?? Array.Empty<LmModelItem>();
     }
 
-    public async Task<string> GetChatCompletionAsync(string baseUrl, string modelId, string prompt, byte[]? imageBytes = null, CancellationToken ct = default)
+    public async Task<string> GetChatCompletionAsync(string baseUrl, string modelId, string prompt, byte[]? imageBytes = null, bool highPriority = false, CancellationToken ct = default)
     {
-        var url = $"{baseUrl.TrimEnd('/')}/v1/chat/completions";
+        await _sharedLock.WaitAsync(ct);
+        try
+        {
+            var url = $"{baseUrl.TrimEnd('/')}/v1/chat/completions";
         
         var contentList = new List<object>
         {
@@ -75,19 +79,32 @@ public class LmStudioClient : ILmStudioClient
         
         var result = await response.Content.ReadFromJsonAsync<ChatCompletionResponse>(ct);
         return result?.Choices?[0]?.Message?.Content ?? throw new InvalidOperationException("Empty response from LM Studio.");
+        }
+        finally
+        {
+            _sharedLock.Release();
+        }
     }
 
-    public async Task<float[]> GetEmbeddingAsync(string baseUrl, string modelId, string text, CancellationToken ct = default)
+    public async Task<float[]> GetEmbeddingAsync(string baseUrl, string modelId, string text, bool highPriority = false, CancellationToken ct = default)
     {
-        var url = $"{baseUrl.TrimEnd('/')}/v1/embeddings";
-        var requestBody = new { model = modelId, input = text };
+        await _sharedLock.WaitAsync(ct);
+        try
+        {
+            var url = $"{baseUrl.TrimEnd('/')}/v1/embeddings";
+            var requestBody = new { model = modelId, input = text };
 
-        var response = await _httpClient.PostAsJsonAsync(url, requestBody, ct);
-        response.EnsureSuccessStatusCode();
+            var response = await _httpClient.PostAsJsonAsync(url, requestBody, ct);
+            response.EnsureSuccessStatusCode();
 
-        var result = await response.Content.ReadFromJsonAsync<EmbeddingResponse>(ct);
-        if (result?.Data == null || result.Data.Count == 0) throw new InvalidOperationException("Empty embedding response from LM Studio.");
-        return result.Data[0].Embedding ?? throw new InvalidOperationException("Embedding vector is null.");
+            var result = await response.Content.ReadFromJsonAsync<EmbeddingResponse>(ct);
+            if (result?.Data == null || result.Data.Count == 0) throw new InvalidOperationException("Empty embedding response from LM Studio.");
+            return result.Data[0].Embedding ?? throw new InvalidOperationException("Embedding vector is null.");
+        }
+        finally
+        {
+            _sharedLock.Release();
+        }
     }
 
     private sealed class ModelsResponse { public List<LmModelItem>? Data { get; set; } }

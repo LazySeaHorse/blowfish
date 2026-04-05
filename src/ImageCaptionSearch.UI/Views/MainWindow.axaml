@@ -3,18 +3,65 @@
         xmlns:vm="using:ImageCaptionSearch.UI.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
         x:Class="ImageCaptionSearch.UI.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="ImageCaptionSearch.UI">
+        Title="{Binding Title}"
+        Background="#ffffff"
+        TransparencyLevelHint="None"
+        ExtendClientAreaToDecorationsHint="True">
 
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
-    </Design.DataContext>
+    <Grid ColumnDefinitions="260,*">
+        <!-- Sidebar -->
+        <Border Background="#f8f9fa" BorderBrush="#e0e0e0" BorderThickness="0,0,1,0">
+            <Grid RowDefinitions="Auto,*,Auto">
+                <!-- App Logo/Name -->
+                <StackPanel Orientation="Horizontal" Spacing="12" Padding="24,48,24,32">
+                    <Border Width="32" Height="32" Background="#4a90e2" CornerRadius="8">
+                        <PathIcon Data="{StaticResource FolderIcon}" Width="16" Height="16" Foreground="White"/>
+                    </Border>
+                    <TextBlock Text="Blowfish" FontSize="20" FontWeight="Bold" VerticalAlignment="Center" Foreground="#1a1a1a"/>
+                </StackPanel>
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <!-- Nav Links -->
+                <StackPanel Grid.Row="1" Spacing="4" Padding="12,0">
+                    <Button HorizontalAlignment="Stretch" 
+                            HorizontalContentAlignment="Left"
+                            Background="Transparent" 
+                            BorderThickness="0" 
+                            CornerRadius="8"
+                            Padding="12,10"
+                            Command="{Binding NavigateToHomeCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <PathIcon Data="{StaticResource FolderIcon}" Width="18" Height="18" Foreground="#4a90e2"/>
+                            <TextBlock Text="Libraries" VerticalAlignment="Center" FontWeight="Medium"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- Footer / Settings -->
+                <StackPanel Grid.Row="2" Padding="12,24" Spacing="4">
+                    <Button HorizontalAlignment="Stretch" 
+                            HorizontalContentAlignment="Left"
+                            Background="Transparent" 
+                            BorderThickness="0" 
+                            CornerRadius="8"
+                            Padding="12,10"
+                            Command="{Binding NavigateToSettingsCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <PathIcon Data="{StaticResource SettingsIcon}" Width="18" Height="18" Foreground="#666666"/>
+                            <TextBlock Text="Settings" VerticalAlignment="Center" Foreground="#666666"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Content Area -->
+        <Border Grid.Column="1" Background="White">
+            <ContentControl Content="{Binding CurrentPage}" />
+        </Border>
+    </Grid>
 
 </Window>

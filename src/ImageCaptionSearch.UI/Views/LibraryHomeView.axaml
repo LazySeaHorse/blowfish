@@ -1,0 +1,105 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ImageCaptionSearch.UI.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="ImageCaptionSearch.UI.Views.LibraryHomeView"
+             x:DataType="vm:LibraryHomeViewModel">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header -->
+        <Border Padding="40,40,40,20">
+            <StackPanel Spacing="10">
+                <TextBlock Text="Your Libraries" 
+                           FontSize="32" 
+                           FontWeight="SemiBold" 
+                           Foreground="#1a1a1a"/>
+                <TextBlock Text="Add folder to start indexing and searching your images." 
+                           Foreground="#666666"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <ScrollViewer Grid.Row="1" Padding="40,0,40,40">
+            <StackPanel Spacing="30">
+                <!-- Add New Library Card -->
+                <Button Command="{Binding AddLibraryCommand}"
+                        Click="OnAddLibraryClick"
+                        Background="Transparent"
+                        Padding="0"
+                        HorizontalAlignment="Left">
+                    <Border Width="200" Height="240"
+                            Background="#f0f0f0"
+                            CornerRadius="16"
+                            BorderBrush="#e0e0e0"
+                            BorderThickness="2">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="15">
+                            <PathIcon Data="{StaticResource AddIcon}" Width="40" Height="40" Foreground="#2d2d2d"/>
+                            <TextBlock Text="Add Library" 
+                                       FontWeight="Medium" 
+                                       Foreground="#2d2d2d"/>
+                        </StackPanel>
+                    </Border>
+                </Button>
+
+                <!-- Library List -->
+                <ItemsControl ItemsSource="{Binding Libraries}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:LibraryViewModel">
+                            <Border Width="200" Height="240" 
+                                    Margin="0,0,20,20"
+                                    Background="White"
+                                    CornerRadius="16"
+                                    BoxShadow="0 4 12 0 #0f000000"
+                                    Cursor="Hand"
+                                    ClipToBounds="True">
+                                <Button Command="{Binding ((vm:LibraryHomeViewModel)DataContext).OpenLibraryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"
+                                        Background="Transparent"
+                                        Padding="0"
+                                        HorizontalContentAlignment="Stretch"
+                                        VerticalContentAlignment="Stretch">
+                                    <Grid RowDefinitions="*,Auto">
+                                        <Border Grid.Row="0" Background="#f8f9fa">
+                                            <PathIcon Data="{StaticResource FolderIcon}" 
+                                                      Width="48" Height="48" 
+                                                      Foreground="#4a90e2"
+                                                      Opacity="0.8"/>
+                                        </Border>
+                                        
+                                        <StackPanel Grid.Row="1" Padding="15" Spacing="4">
+                                            <TextBlock Text="{Binding Name}" 
+                                                       FontWeight="SemiBold" 
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Path}" 
+                                                       FontSize="11" 
+                                                       Foreground="#999999" 
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Button>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Loading Overlay -->
+        <Border Grid.RowSpan="2" 
+                Background="#80ffffff" 
+                IsVisible="{Binding IsLoading}"
+                ZIndex="100">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="20">
+                 <ProgressBar IsIndeterminate="True" Width="200"/>
+                 <TextBlock Text="Loading your libraries..." HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>
