@@ -341,21 +341,19 @@ public class LibraryService : ILibraryService
         await ExecuteCommandAsync(connection, @"
             CREATE VIRTUAL TABLE IF NOT EXISTS captions_fts USING fts5(
                 caption,
-                content='captions',
-                content_rowid='image_id'
+                image_id UNINDEXED
             );", transaction, ct);
 
         // Triggers for FTS maintenance
         await ExecuteCommandAsync(connection, @"
             CREATE TRIGGER IF NOT EXISTS captions_ai AFTER INSERT ON captions BEGIN
-              INSERT INTO captions_fts(rowid, caption) VALUES (new.image_id, new.caption);
+              INSERT INTO captions_fts(image_id, caption) VALUES (new.image_id, new.caption);
             END;
             CREATE TRIGGER IF NOT EXISTS captions_ad AFTER DELETE ON captions BEGIN
-              INSERT INTO captions_fts(captions_fts, rowid, caption) VALUES('delete', old.image_id, old.caption);
+              DELETE FROM captions_fts WHERE image_id = old.image_id;
             END;
             CREATE TRIGGER IF NOT EXISTS captions_au AFTER UPDATE ON captions BEGIN
-              INSERT INTO captions_fts(captions_fts, rowid, caption) VALUES('delete', old.image_id, old.caption);
-              INSERT INTO captions_fts(rowid, caption) VALUES (new.image_id, new.caption);
+              UPDATE captions_fts SET caption = new.caption WHERE image_id = new.image_id;
             END;", transaction, ct);
 
         await transaction.CommitAsync(ct);
