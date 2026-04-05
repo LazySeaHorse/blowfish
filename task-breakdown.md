@@ -60,7 +60,8 @@ The goal is to have a minimally usable app as early as possible:
 | M0 | Repo bootstrap and guardrails | none | Solution, projects, analyzers, policy checks | [x] |
 | M1 | Core domain and app shell | M0 | Core abstractions, Avalonia shell | [x] |
 | M2 | Library registry and DB creation | M1 | Add/open/remove library, DB initialization | [x] |
-| M3 | Scanning and thumbnails | M2 | File discovery, metadata, thumbnails | [ ] |
+| M3 | Scanning and thumbnails | M2 | File discovery, metadata, thumbnails | [x] |
+
 | M4 | LM Studio integration | M2 | Connection, model listing, captioning, embeddings |
 | M5 | Persistence and search engine | M3, M4 | Caption DB, vector DB, FTS, cosine search |
 | M6 | Indexing pipeline | M3, M4, M5 | TPL Dataflow queue, retries, progress |
@@ -330,7 +331,7 @@ Interfaces such as:
 
 ## M3. Scanning and Thumbnails
 
-### T011. Implement recursive image discovery
+### [x] T011. Implement recursive image discovery
 **Goal:** Find supported image files under a library root.
 
 **Deliverables**
@@ -351,7 +352,7 @@ Interfaces such as:
 
 ---
 
-### T012. Implement dirty detection
+### [x] T012. Implement dirty detection
 **Goal:** Determine which files are new, changed, unchanged, or missing.
 
 **Deliverables**
@@ -376,7 +377,7 @@ Interfaces such as:
 
 ---
 
-### T013. Extract image metadata and generate thumbnails
+### [x] T013. Extract image metadata and generate thumbnails
 **Goal:** Produce thumbnail cache and basic dimensions safely.
 
 **Deliverables**

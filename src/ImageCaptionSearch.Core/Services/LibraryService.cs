@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,10 +44,111 @@ public class LibraryService : ILibraryService
         await InitializeVectorsDbAsync(vectorsPath, ct);
     }
 
-    public Task<LibraryStatus> GetLibraryStatusAsync(Library library, CancellationToken ct = default)
+    public async Task<LibraryStatus> GetLibraryStatusAsync(Library library, CancellationToken ct = default)
     {
-        // Placeholder implementation for now as per M2 requirements
-        return Task.FromResult(new LibraryStatus(0, 0, 0, 0, null));
+        var catalogPath = Path.Combine(library.RootPath, ".imagecaptionsearch", "catalog.db");
+        if (!File.Exists(catalogPath)) return new LibraryStatus(0, 0, 0, 0, null);
+
+        using var connection = new SqliteConnection($"Data Source={catalogPath}");
+        await connection.OpenAsync(ct);
+
+        var total = await ExecuteScalarAsync<long>(connection, "SELECT COUNT(*) FROM images WHERE is_missing = 0", null, ct);
+        var indexed = await ExecuteScalarAsync<long>(connection, "SELECT COUNT(*) FROM images WHERE status = 'Completed' AND is_missing = 0", null, ct);
+        var pending = await ExecuteScalarAsync<long>(connection, "SELECT COUNT(*) FROM images WHERE status NOT IN ('Completed', 'Failed', 'Missing') AND is_missing = 0", null, ct);
+        var failed = await ExecuteScalarAsync<long>(connection, "SELECT COUNT(*) FROM images WHERE status = 'Failed' AND is_missing = 0", null, ct);
+
+        return new LibraryStatus((int)total, (int)indexed, (int)pending, (int)failed, null);
+    }
+
+    public async Task<IReadOnlyList<ImageRecord>> GetImagesAsync(Library library, CancellationToken ct = default)
+    {
+        var catalogPath = Path.Combine(library.RootPath, ".imagecaptionsearch", "catalog.db");
+        using var connection = new SqliteConnection($"Data Source={catalogPath}");
+        await connection.OpenAsync(ct);
+
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, relative_path, file_name, extension, size_bytes, modified_utc, discovered_utc, status, is_missing, width, height, last_processed_utc, thumbnail_rel_path, last_error FROM images";
+        
+        var results = new List<ImageRecord>();
+        using var reader = await command.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            results.Add(new ImageRecord(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                reader.GetString(3),
+                reader.GetInt64(4),
+                DateTime.Parse(reader.GetString(5), CultureInfo.InvariantCulture),
+                DateTime.Parse(reader.GetString(6), CultureInfo.InvariantCulture),
+                Enum.Parse<ProcessingState>(reader.GetString(7)),
+                reader.GetInt32(8) != 0,
+                reader.IsDBNull(9) ? null : reader.GetInt32(9),
+                reader.IsDBNull(10) ? null : reader.GetInt32(10),
+                reader.IsDBNull(11) ? null : DateTime.Parse(reader.GetString(11), CultureInfo.InvariantCulture),
+                reader.IsDBNull(12) ? null : reader.GetString(12),
+                reader.IsDBNull(13) ? null : reader.GetString(13)
+            ));
+        }
+        return results;
+    }
+
+    public async Task UpsertImagesAsync(Library library, IEnumerable<ImageRecord> images, CancellationToken ct = default)
+    {
+        var catalogPath = Path.Combine(library.RootPath, ".imagecaptionsearch", "catalog.db");
+        using var connection = new SqliteConnection($"Data Source={catalogPath}");
+        await connection.OpenAsync(ct);
+
+        using var transaction = connection.BeginTransaction();
+        foreach (var img in images)
+        {
+            await ExecuteCommandAsync(connection, @"
+                INSERT INTO images (id, relative_path, file_name, extension, size_bytes, modified_utc, status, is_missing, discovered_utc, width, height, last_processed_utc, thumbnail_rel_path, last_error)
+                VALUES (@id, @rel, @name, @ext, @size, @mod, @status, @miss, @disc, @w, @h, @proc, @thumb, @err)
+                ON CONFLICT(relative_path) DO UPDATE SET
+                    size_bytes = excluded.size_bytes,
+                    modified_utc = excluded.modified_utc,
+                    status = excluded.status,
+                    is_missing = excluded.is_missing,
+                    last_processed_utc = excluded.last_processed_utc,
+                    thumbnail_rel_path = excluded.thumbnail_rel_path,
+                    last_error = excluded.last_error",
+                transaction, ct,
+                new SqliteParameter("@id", img.Id),
+                new SqliteParameter("@rel", img.RelativePath),
+                new SqliteParameter("@name", img.FileName),
+                new SqliteParameter("@ext", img.Extension),
+                new SqliteParameter("@size", img.SizeBytes),
+                new SqliteParameter("@mod", img.ModifiedUtc.ToString("o", CultureInfo.InvariantCulture)),
+                new SqliteParameter("@status", img.Status.ToString()),
+                new SqliteParameter("@miss", img.IsMissing ? 1 : 0),
+                new SqliteParameter("@disc", img.DiscoveredUtc.ToString("o", CultureInfo.InvariantCulture)),
+                new SqliteParameter("@w", (object?)img.Width ?? DBNull.Value),
+                new SqliteParameter("@h", (object?)img.Height ?? DBNull.Value),
+                new SqliteParameter("@proc", (object?)img.LastProcessedUtc?.ToString("o", CultureInfo.InvariantCulture) ?? DBNull.Value),
+                new SqliteParameter("@thumb", (object?)img.ThumbnailRelPath ?? DBNull.Value),
+                new SqliteParameter("@err", (object?)img.LastError ?? DBNull.Value)
+            );
+        }
+        await transaction.CommitAsync(ct);
+    }
+
+    public async Task MarkMissingAsync(Library library, IEnumerable<string> imageIds, CancellationToken ct = default)
+    {
+        var catalogPath = Path.Combine(library.RootPath, ".imagecaptionsearch", "catalog.db");
+        using var connection = new SqliteConnection($"Data Source={catalogPath}");
+        await connection.OpenAsync(ct);
+
+        using var transaction = connection.BeginTransaction();
+        foreach (var id in imageIds)
+        {
+            await ExecuteCommandAsync(connection, 
+                "UPDATE images SET is_missing = 1, status = @s WHERE id = @id",
+                transaction, ct,
+                new SqliteParameter("@s", ProcessingState.Missing.ToString()),
+                new SqliteParameter("@id", id));
+        }
+        await transaction.CommitAsync(ct);
     }
 
     private async Task InitializeCatalogDbAsync(string dbPath, CancellationToken ct)
@@ -70,7 +173,7 @@ public class LibraryService : ILibraryService
         {
             await ExecuteCommandAsync(connection, 
                 "INSERT INTO schema_info (key, value) VALUES ('version', @v)", transaction, ct, 
-                new SqliteParameter("@v", SchemaVersion.ToString()));
+                new SqliteParameter("@v", SchemaVersion.ToString(CultureInfo.InvariantCulture)));
         }
 
         // Library Settings
@@ -196,7 +299,7 @@ public class LibraryService : ILibraryService
         await transaction.CommitAsync(ct);
     }
 
-    private static async Task ExecuteCommandAsync(SqliteConnection connection, string sql, SqliteTransaction transaction, CancellationToken ct, params SqliteParameter[] parameters)
+    private static async Task ExecuteCommandAsync(SqliteConnection connection, string sql, SqliteTransaction? transaction, CancellationToken ct, params SqliteParameter[] parameters)
     {
         using var command = connection.CreateCommand();
         command.CommandText = sql;
@@ -205,7 +308,7 @@ public class LibraryService : ILibraryService
         await command.ExecuteNonQueryAsync(ct);
     }
 
-    private static async Task<T?> ExecuteScalarAsync<T>(SqliteConnection connection, string sql, SqliteTransaction transaction, CancellationToken ct, params SqliteParameter[] parameters)
+    private static async Task<T?> ExecuteScalarAsync<T>(SqliteConnection connection, string sql, SqliteTransaction? transaction, CancellationToken ct, params SqliteParameter[] parameters)
     {
         using var command = connection.CreateCommand();
         command.CommandText = sql;
@@ -213,6 +316,6 @@ public class LibraryService : ILibraryService
         command.Parameters.AddRange(parameters);
         var result = await command.ExecuteScalarAsync(ct);
         if (result == null || result == DBNull.Value) return default;
-        return (T)result;
+        return (T)Convert.ChangeType(result, typeof(T), CultureInfo.InvariantCulture);
     }
 }

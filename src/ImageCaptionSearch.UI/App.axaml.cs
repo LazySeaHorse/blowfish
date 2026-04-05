@@ -1,16 +1,21 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using System.Linq;
+using System;
 using Avalonia.Markup.Xaml;
+using Microsoft.Extensions.DependencyInjection;
 using ImageCaptionSearch.UI.ViewModels;
 using ImageCaptionSearch.UI.Views;
+using ImageCaptionSearch.Core.Services;
+using ImageCaptionSearch.Core.Interfaces;
 
 namespace ImageCaptionSearch.UI;
 
 public partial class App : Application
 {
+    public static IServiceProvider? Services { get; private set; }
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -18,19 +23,38 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        var services = new ServiceCollection();
+        ConfigureServices(services);
+        Services = services.BuildServiceProvider();
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
             // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
             DisableAvaloniaDataAnnotationValidation();
+
             desktop.MainWindow = new MainWindow
             {
-                DataContext = new MainWindowViewModel(),
+                DataContext = Services.GetRequiredService<MainWindowViewModel>(),
             };
         }
 
         base.OnFrameworkInitializationCompleted();
     }
+
+    private void ConfigureServices(ServiceCollection services)
+    {
+        // Core Services
+        services.AddSingleton<ILibraryRegistryService, LibraryRegistryService>();
+        services.AddSingleton<ILibraryService, LibraryService>();
+        services.AddSingleton<IScanService, ScanService>();
+        services.AddSingleton<IThumbnailService, ThumbnailService>();
+        services.AddSingleton<IIndexingPipelineService, IndexingPipelineService>();
+
+        // ViewModels
+        services.AddTransient<MainWindowViewModel>();
+    }
+
 
     private void DisableAvaloniaDataAnnotationValidation()
     {
@@ -44,4 +68,4 @@ public partial class App : Application
             BindingPlugins.DataValidators.Remove(plugin);
         }
     }
-}
+}
