@@ -64,7 +64,7 @@ The goal is to have a minimally usable app as early as possible:
 
 | M4 | LM Studio integration | M2 | Connection, model listing, captioning, embeddings | [x] |
 | M5 | Persistence and search engine | M3, M4 | Caption DB, vector DB, FTS, cosine search | [x] |
-| M6 | Indexing pipeline | M3, M4, M5 | TPL Dataflow queue, retries, progress |
+| M6 | Indexing pipeline | M3, M4, M5 | TPL Dataflow queue, retries, progress | [x] |
 | M7 | Search UI and detail views | M5, M6 | Usable MVP search experience |
 | M8 | Face pipeline | M4, M5, M6 | Gated face embeddings and similar-face search |
 | M9 | Settings, resiliency, logging | M2-M8 | Restart safety, validation, diagnostics |
@@ -583,7 +583,7 @@ Interfaces such as:
 
 ## M6. Indexing Pipeline
 
-### T022. Implement TPL Dataflow-based indexing pipeline
+### [x] T022. Implement TPL Dataflow-based indexing pipeline
 **Goal:** Build a resilient asynchronous processing queue.
 
 **Deliverables**
@@ -612,7 +612,7 @@ Interfaces such as:
 
 ---
 
-### T023. Add pause, resume, cancel, and retry support
+### [x] T023. Add pause, resume, cancel, and retry support
 **Goal:** Make indexing controllable and recoverable.
 
 **Deliverables**
@@ -632,7 +632,7 @@ Interfaces such as:
 
 ---
 
-### T024. Add retry policy and transient error handling
+### [x] T024. Add retry policy and transient error handling
 **Goal:** Handle local model and network instability safely.
 
 **Deliverables**
