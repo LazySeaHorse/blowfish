@@ -63,7 +63,7 @@ The goal is to have a minimally usable app as early as possible:
 | M3 | Scanning and thumbnails | M2 | File discovery, metadata, thumbnails | [x] |
 
 | M4 | LM Studio integration | M2 | Connection, model listing, captioning, embeddings | [x] |
-| M5 | Persistence and search engine | M3, M4 | Caption DB, vector DB, FTS, cosine search |
+| M5 | Persistence and search engine | M3, M4 | Caption DB, vector DB, FTS, cosine search | [x] |
 | M6 | Indexing pipeline | M3, M4, M5 | TPL Dataflow queue, retries, progress |
 | M7 | Search UI and detail views | M5, M6 | Usable MVP search experience |
 | M8 | Face pipeline | M4, M5, M6 | Gated face embeddings and similar-face search |
@@ -494,7 +494,7 @@ Interfaces such as:
 
 ## M5. Persistence and Search Engine
 
-### T018. Persist image, caption, and embedding data
+### [x] T018. Persist image, caption, and embedding data
 **Goal:** Save processed outputs consistently across both DBs.
 
 **Deliverables**
@@ -518,7 +518,7 @@ Interfaces such as:
 
 ---
 
-### T019. Implement caption search with SQLite FTS
+### [x] T019. Implement caption search with SQLite FTS
 **Goal:** Support direct caption search without LM Studio availability.
 
 **Deliverables**
@@ -537,7 +537,7 @@ Interfaces such as:
 
 ---
 
-### T020. Implement semantic search engine
+### [x] T020. Implement semantic search engine
 **Goal:** Support natural-language semantic retrieval per library.
 
 **Deliverables**
@@ -558,7 +558,7 @@ Interfaces such as:
 
 ---
 
-### T021. Implement result mapping and domain DTOs for UI
+### [x] T021. Implement result mapping and domain DTOs for UI
 **Goal:** Keep UI simple and avoid DB-shaped view models.
 
 **Deliverables**

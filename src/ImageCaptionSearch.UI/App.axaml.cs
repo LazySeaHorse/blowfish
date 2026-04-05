@@ -53,6 +53,7 @@ public partial class App : Application
                 });
 
         // Core Services
+        services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<ILibraryRegistryService, LibraryRegistryService>();
         services.AddSingleton<ILibraryService, LibraryService>();
         services.AddSingleton<IScanService, ScanService>();
@@ -60,6 +61,7 @@ public partial class App : Application
         services.AddSingleton<IIndexingPipelineService, IndexingPipelineService>();
         services.AddSingleton<ICaptionService, CaptionService>();
         services.AddSingleton<IEmbeddingService, EmbeddingService>();
+        services.AddSingleton<ISearchService, SearchService>();
 
         // ViewModels
         services.AddTransient<MainWindowViewModel>();

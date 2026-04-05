@@ -151,6 +151,100 @@ public class LibraryService : ILibraryService
         await transaction.CommitAsync(ct);
     }
 
+    public async Task SaveCaptionAsync(Library library, CaptionRecord caption, CancellationToken ct = default)
+    {
+        var catalogPath = Path.Combine(library.RootPath, ".imagecaptionsearch", "catalog.db");
+        using var connection = new SqliteConnection($"Data Source={catalogPath}");
+        await connection.OpenAsync(ct);
+
+        using var transaction = connection.BeginTransaction();
+        await ExecuteCommandAsync(connection, @"
+            INSERT INTO captions (image_id, caption, raw_json, has_human, vision_model, prompt_version, captioned_utc)
+            VALUES (@id, @cap, @raw, @human, @model, @prompt, @utc)
+            ON CONFLICT(image_id) DO UPDATE SET 
+                caption=excluded.caption, 
+                raw_json=excluded.raw_json, 
+                has_human=excluded.has_human, 
+                captioned_utc=excluded.captioned_utc",
+            transaction, ct,
+            new SqliteParameter("@id", caption.ImageId),
+            new SqliteParameter("@cap", caption.Caption),
+            new SqliteParameter("@raw", caption.RawJson),
+            new SqliteParameter("@human", caption.HasHuman ? 1 : 0),
+            new SqliteParameter("@model", caption.VisionModel),
+            new SqliteParameter("@prompt", caption.PromptVersion),
+            new SqliteParameter("@utc", caption.CaptionedUtc.ToString("o", CultureInfo.InvariantCulture))
+        );
+        await transaction.CommitAsync(ct);
+    }
+
+    public async Task SaveEmbeddingAsync(Library library, EmbeddingRecord embedding, CancellationToken ct = default)
+    {
+        var vectorsPath = Path.Combine(library.RootPath, ".imagecaptionsearch", "vectors.db");
+        using var connection = new SqliteConnection($"Data Source={vectorsPath}");
+        await connection.OpenAsync(ct);
+
+        using var transaction = connection.BeginTransaction();
+        var vectorBytes = new byte[embedding.Vector.Length * sizeof(float)];
+        Buffer.BlockCopy(embedding.Vector, 0, vectorBytes, 0, vectorBytes.Length);
+
+        await ExecuteCommandAsync(connection, @"
+            INSERT INTO image_embeddings (image_id, model_name, dimension, vector_blob, vector_norm, embedded_utc)
+            VALUES (@id, @model, @dim, @blob, @norm, @utc)
+            ON CONFLICT(image_id) DO UPDATE SET
+                model_name=excluded.model_name,
+                dimension=excluded.dimension,
+                vector_blob=excluded.vector_blob,
+                vector_norm=excluded.vector_norm,
+                embedded_utc=excluded.embedded_utc",
+            transaction, ct,
+            new SqliteParameter("@id", embedding.ParentId),
+            new SqliteParameter("@model", embedding.ModelName),
+            new SqliteParameter("@dim", embedding.Dimension),
+            new SqliteParameter("@blob", vectorBytes),
+            new SqliteParameter("@norm", embedding.VectorNorm),
+            new SqliteParameter("@utc", embedding.EmbeddedUtc.ToString("o", CultureInfo.InvariantCulture))
+        );
+        await transaction.CommitAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<EmbeddingRecord>> GetEmbeddingsAsync(Library library, string? modelId = null, CancellationToken ct = default)
+    {
+        var vectorsPath = Path.Combine(library.RootPath, ".imagecaptionsearch", "vectors.db");
+        using var connection = new SqliteConnection($"Data Source={vectorsPath}");
+        await connection.OpenAsync(ct);
+
+        using var command = connection.CreateCommand();
+        if (modelId != null)
+        {
+            command.CommandText = "SELECT image_id, model_name, dimension, vector_blob, vector_norm, embedded_utc FROM image_embeddings WHERE model_name = @model";
+            command.Parameters.AddWithValue("@model", modelId);
+        }
+        else
+        {
+            command.CommandText = "SELECT image_id, model_name, dimension, vector_blob, vector_norm, embedded_utc FROM image_embeddings";
+        }
+
+        var results = new List<EmbeddingRecord>();
+        using var reader = await command.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            var blob = (byte[])reader[3];
+            var floatArray = new float[blob.Length / sizeof(float)];
+            Buffer.BlockCopy(blob, 0, floatArray, 0, blob.Length);
+
+            results.Add(new EmbeddingRecord(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetInt32(2),
+                floatArray,
+                reader.GetDouble(4),
+                DateTime.Parse(reader.GetString(5), CultureInfo.InvariantCulture)
+            ));
+        }
+        return results;
+    }
+
     private async Task InitializeCatalogDbAsync(string dbPath, CancellationToken ct)
     {
         using var connection = new SqliteConnection($"Data Source={dbPath}");

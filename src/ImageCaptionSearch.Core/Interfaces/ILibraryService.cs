@@ -12,7 +12,12 @@ public interface ILibraryService
     Task<IReadOnlyList<ImageRecord>> GetImagesAsync(Library library, CancellationToken ct = default);
     Task UpsertImagesAsync(Library library, IEnumerable<ImageRecord> images, CancellationToken ct = default);
     Task MarkMissingAsync(Library library, IEnumerable<string> imageIds, CancellationToken ct = default);
+    Task SaveCaptionAsync(Library library, CaptionRecord caption, CancellationToken ct = default);
+    Task SaveEmbeddingAsync(Library library, EmbeddingRecord embedding, CancellationToken ct = default);
+    Task<IReadOnlyList<EmbeddingRecord>> GetEmbeddingsAsync(Library library, string? modelId = null, CancellationToken ct = default);
 }
+
+
 
 public record LibraryStatus(
     int TotalFiles,
