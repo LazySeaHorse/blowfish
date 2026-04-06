@@ -3,7 +3,8 @@
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="System.Threading.Tasks.Dataflow" />
     <PackageReference Include="Microsoft.Extensions.Http" />
-    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" />
     <PackageReference Include="SkiaSharp" />
     <PackageReference Include="SkiaSharp.NativeAssets.Win32" />
   </ItemGroup>

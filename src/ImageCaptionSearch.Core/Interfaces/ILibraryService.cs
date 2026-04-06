@@ -15,6 +15,14 @@ public interface ILibraryService
     Task SaveCaptionAsync(Library library, CaptionRecord caption, CancellationToken ct = default);
     Task SaveEmbeddingAsync(Library library, EmbeddingRecord embedding, CancellationToken ct = default);
     Task<IReadOnlyList<EmbeddingRecord>> GetEmbeddingsAsync(Library library, string? modelId = null, CancellationToken ct = default);
+    Task SaveFacesAsync(Library library, string imageId, IReadOnlyList<FaceDetectionResult> faces, string detectorModel, string recognizerModel, CancellationToken ct = default);
+    Task<IReadOnlyList<FaceRecord>> GetFacesAsync(Library library, string imageId, CancellationToken ct = default);
+    Task<IReadOnlyList<FaceEmbedding>> GetFaceEmbeddingsAsync(Library library, string? modelId = null, CancellationToken ct = default);
+
+    // Job Management
+    Task<IReadOnlyList<ProcessingJob>> GetActiveJobsAsync(Library library, CancellationToken ct = default);
+    Task UpsertJobAsync(Library library, ProcessingJob job, CancellationToken ct = default);
+    Task RemoveJobAsync(Library library, string imageId, CancellationToken ct = default);
 }
 
 

@@ -245,6 +245,191 @@ public class LibraryService : ILibraryService
         return results;
     }
 
+    public async Task SaveFacesAsync(Library library, string imageId, IReadOnlyList<FaceDetectionResult> faces, string detectorModel, string recognizerModel, CancellationToken ct = default)
+    {
+        var internalPath = Path.Combine(library.RootPath, ".imagecaptionsearch");
+        var catalogPath = Path.Combine(internalPath, "catalog.db");
+        var vectorsPath = Path.Combine(internalPath, "vectors.db");
+
+        // 1. Update Catalog DB
+        using (var catalogConn = new SqliteConnection($"Data Source={catalogPath}"))
+        {
+            await catalogConn.OpenAsync(ct);
+            using var transaction = catalogConn.BeginTransaction();
+
+            // Clear old faces for this image if re-processing
+            await ExecuteCommandAsync(catalogConn, "DELETE FROM faces WHERE image_id = @id", transaction, ct, new SqliteParameter("@id", imageId));
+
+            foreach (var face in faces)
+            {
+                var faceId = Guid.NewGuid().ToString();
+                await ExecuteCommandAsync(catalogConn, @"
+                    INSERT INTO faces (id, image_id, face_index, bbox_x, bbox_y, bbox_width, bbox_height, detector_model, recognizer_model, created_utc)
+                    VALUES (@id, @img, @idx, @x, @y, @w, @h, @det, @rec, @utc)",
+                    transaction, ct,
+                    new SqliteParameter("@id", faceId),
+                    new SqliteParameter("@img", imageId),
+                    new SqliteParameter("@idx", face.FaceIndex),
+                    new SqliteParameter("@x", face.BBoxX),
+                    new SqliteParameter("@y", face.BBoxY),
+                    new SqliteParameter("@w", face.BBoxWidth),
+                    new SqliteParameter("@h", face.BBoxHeight),
+                    new SqliteParameter("@det", detectorModel),
+                    new SqliteParameter("@rec", recognizerModel),
+                    new SqliteParameter("@utc", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture))
+                );
+
+                // 2. Update Vectors DB for EACH face
+                using (var vectorConn = new SqliteConnection($"Data Source={vectorsPath}"))
+                {
+                    await vectorConn.OpenAsync(ct);
+                    var vectorBytes = new byte[face.Vector.Length * sizeof(float)];
+                    Buffer.BlockCopy(face.Vector, 0, vectorBytes, 0, vectorBytes.Length);
+
+                    double norm = 0;
+                    foreach (var v in face.Vector) norm += v * v;
+                    norm = Math.Sqrt(norm);
+
+                    await ExecuteCommandAsync(vectorConn, @"
+                        INSERT INTO face_embeddings (face_id, model_name, dimension, vector_blob, vector_norm, embedded_utc)
+                        VALUES (@id, @model, @dim, @blob, @norm, @utc)",
+                        null, ct,
+                        new SqliteParameter("@id", faceId),
+                        new SqliteParameter("@model", recognizerModel),
+                        new SqliteParameter("@dim", face.Vector.Length),
+                        new SqliteParameter("@blob", vectorBytes),
+                        new SqliteParameter("@norm", norm),
+                        new SqliteParameter("@utc", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture))
+                    );
+                }
+            }
+
+            await transaction.CommitAsync(ct);
+        }
+    }
+
+    public async Task<IReadOnlyList<FaceRecord>> GetFacesAsync(Library library, string imageId, CancellationToken ct = default)
+    {
+        var catalogPath = Path.Combine(library.RootPath, ".imagecaptionsearch", "catalog.db");
+        using var connection = new SqliteConnection($"Data Source={catalogPath}");
+        await connection.OpenAsync(ct);
+
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, image_id, face_index, bbox_x, bbox_y, bbox_width, bbox_height, detector_model, recognizer_model, created_utc FROM faces WHERE image_id = @img";
+        command.Parameters.AddWithValue("@img", imageId);
+
+        var results = new List<FaceRecord>();
+        using var reader = await command.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            results.Add(new FaceRecord(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetInt32(2),
+                reader.GetDouble(3),
+                reader.GetDouble(4),
+                reader.GetDouble(5),
+                reader.GetDouble(6),
+                reader.GetString(7),
+                reader.GetString(8),
+                DateTime.Parse(reader.GetString(9), CultureInfo.InvariantCulture)
+            ));
+        }
+        return results;
+    }
+
+    public async Task<IReadOnlyList<FaceEmbedding>> GetFaceEmbeddingsAsync(Library library, string? modelId = null, CancellationToken ct = default)
+    {
+        var vectorsPath = Path.Combine(library.RootPath, ".imagecaptionsearch", "vectors.db");
+        using var connection = new SqliteConnection($"Data Source={vectorsPath}");
+        await connection.OpenAsync(ct);
+
+        using var command = connection.CreateCommand();
+        if (modelId != null)
+        {
+            command.CommandText = "SELECT face_id, model_name, dimension, vector_blob, vector_norm FROM face_embeddings WHERE model_name = @model";
+            command.Parameters.AddWithValue("@model", modelId);
+        }
+        else
+        {
+            command.CommandText = "SELECT face_id, model_name, dimension, vector_blob, vector_norm FROM face_embeddings";
+        }
+
+        var results = new List<FaceEmbedding>();
+        using var reader = await command.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            var blob = (byte[])reader[3];
+            var floatArray = new float[blob.Length / sizeof(float)];
+            Buffer.BlockCopy(blob, 0, floatArray, 0, blob.Length);
+
+            results.Add(new FaceEmbedding(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetInt32(2),
+                floatArray,
+                reader.GetDouble(4)
+            ));
+        }
+        return results;
+    }
+
+    public async Task<IReadOnlyList<ProcessingJob>> GetActiveJobsAsync(Library library, CancellationToken ct = default)
+    {
+        var catalogPath = Path.Combine(library.RootPath, ".imagecaptionsearch", "catalog.db");
+        using var connection = new SqliteConnection($"Data Source={catalogPath}");
+        await connection.OpenAsync(ct);
+
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT image_id, retry_count, pipeline_state, updated_utc FROM processing_jobs";
+
+        var results = new List<ProcessingJob>();
+        using var reader = await command.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            results.Add(new ProcessingJob(
+                reader.GetString(0),
+                reader.GetInt32(1),
+                reader.GetString(2),
+                DateTime.Parse(reader.GetString(3), CultureInfo.InvariantCulture)
+            ));
+        }
+        return results;
+    }
+
+    public async Task UpsertJobAsync(Library library, ProcessingJob job, CancellationToken ct = default)
+    {
+        var catalogPath = Path.Combine(library.RootPath, ".imagecaptionsearch", "catalog.db");
+        using var connection = new SqliteConnection($"Data Source={catalogPath}");
+        await connection.OpenAsync(ct);
+
+        await ExecuteCommandAsync(connection, @"
+            INSERT INTO processing_jobs (image_id, retry_count, pipeline_state, updated_utc)
+            VALUES (@id, @retry, @state, @utc)
+            ON CONFLICT(image_id) DO UPDATE SET
+                retry_count = excluded.retry_count,
+                pipeline_state = excluded.pipeline_state,
+                updated_utc = excluded.updated_utc",
+            null, ct,
+            new SqliteParameter("@id", job.ImageId),
+            new SqliteParameter("@retry", job.RetryCount),
+            new SqliteParameter("@state", job.PipelineState),
+            new SqliteParameter("@utc", job.UpdatedUtc.ToString("o", CultureInfo.InvariantCulture))
+        );
+    }
+
+    public async Task RemoveJobAsync(Library library, string imageId, CancellationToken ct = default)
+    {
+        var catalogPath = Path.Combine(library.RootPath, ".imagecaptionsearch", "catalog.db");
+        using var connection = new SqliteConnection($"Data Source={catalogPath}");
+        await connection.OpenAsync(ct);
+
+        await ExecuteCommandAsync(connection, 
+            "DELETE FROM processing_jobs WHERE image_id = @id",
+            null, ct,
+            new SqliteParameter("@id", imageId));
+    }
+
     private async Task InitializeCatalogDbAsync(string dbPath, CancellationToken ct)
     {
         using var connection = new SqliteConnection($"Data Source={dbPath}");

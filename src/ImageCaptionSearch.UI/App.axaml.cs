@@ -9,6 +9,8 @@ using ImageCaptionSearch.UI.ViewModels;
 using ImageCaptionSearch.UI.Views;
 using ImageCaptionSearch.Core.Services;
 using ImageCaptionSearch.Core.Interfaces;
+using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace ImageCaptionSearch.UI;
 
@@ -24,6 +26,19 @@ public partial class App : Application
     public override void OnFrameworkInitializationCompleted()
     {
         var services = new ServiceCollection();
+        
+        // Setup Logging
+        var appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ImageCaptionSearch");
+        Directory.CreateDirectory(appDataPath);
+        var logPath = Path.Combine(appDataPath, "logs", "log-.txt");
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .WriteTo.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+            .CreateLogger();
+
+        services.AddLogging(lb => lb.AddSerilog());
+
         ConfigureServices(services);
         Services = services.BuildServiceProvider();
 
@@ -62,6 +77,7 @@ public partial class App : Application
         services.AddSingleton<ICaptionService, CaptionService>();
         services.AddSingleton<IEmbeddingService, EmbeddingService>();
         services.AddSingleton<ISearchService, SearchService>();
+        services.AddSingleton<IFaceRecognitionService, FaceRecognitionService>();
 
         // ViewModels
         services.AddTransient<MainWindowViewModel>();

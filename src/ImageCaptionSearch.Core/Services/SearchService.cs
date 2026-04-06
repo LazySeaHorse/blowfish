@@ -63,7 +63,7 @@ public class SearchService : ISearchService
         if (string.IsNullOrWhiteSpace(query.QueryText))
         {
             command.CommandText = $@"
-                SELECT i.id, i.relative_path, i.file_name, c.caption, c.has_human, i.thumbnail_rel_path, 1.0 as score
+                SELECT i.id, i.relative_path, i.file_name, c.caption, c.has_human, i.thumbnail_rel_path, 1.0 as score, i.last_error
                 FROM images i
                 INNER JOIN captions c ON i.id = c.image_id
                 {whereClause}
@@ -75,7 +75,7 @@ public class SearchService : ISearchService
             // Note: score for bm25 is negative (smaller is better), but for consistency we use absolute or inverse.
             // Actually, we'll just return it and UI can deal with it or we just sort by it.
             command.CommandText = $@"
-                SELECT i.id, i.relative_path, i.file_name, c.caption, c.has_human, i.thumbnail_rel_path, bm25(captions_fts) as score
+                SELECT i.id, i.relative_path, i.file_name, c.caption, c.has_human, i.thumbnail_rel_path, bm25(captions_fts) as score, i.last_error
                 FROM images i
                 INNER JOIN captions c ON i.id = c.image_id
                 JOIN captions_fts ON c.image_id = captions_fts.image_id
@@ -99,7 +99,8 @@ public class SearchService : ISearchService
                 reader.IsDBNull(3) ? null : reader.GetString(3),
                 reader.GetInt32(4) != 0,
                 Math.Abs(reader.GetDouble(6)), 
-                reader.IsDBNull(5) ? null : reader.GetString(5)
+                reader.IsDBNull(5) ? null : reader.GetString(5),
+                reader.IsDBNull(7) ? null : reader.GetString(7)
             ));
         }
         return results;
@@ -170,7 +171,7 @@ public class SearchService : ISearchService
         using var command = connection.CreateCommand();
         var idList = string.Join(",", ids.Select(id => $"'{id}'"));
         command.CommandText = $@"
-            SELECT i.id, i.relative_path, i.file_name, c.caption, c.has_human, i.thumbnail_rel_path
+            SELECT i.id, i.relative_path, i.file_name, c.caption, c.has_human, i.thumbnail_rel_path, i.last_error
             FROM images i
             LEFT JOIN captions c ON i.id = c.image_id
             WHERE i.id IN ({idList})";
@@ -187,7 +188,8 @@ public class SearchService : ISearchService
                 reader.IsDBNull(3) ? null : reader.GetString(3),
                 !reader.IsDBNull(4) && reader.GetInt32(4) != 0,
                 0,
-                reader.IsDBNull(5) ? null : reader.GetString(5)
+                reader.IsDBNull(5) ? null : reader.GetString(5),
+                reader.IsDBNull(6) ? null : reader.GetString(6)
             );
         }
         return results;
@@ -198,12 +200,93 @@ public class SearchService : ISearchService
         var library = await _libraryRegistry.GetLibraryByIdAsync(libraryId, ct);
         if (library == null) throw new InvalidOperationException("Library not found.");
 
-        // TODO: Implement similarity find via database embedding
-        return Array.Empty<SearchResultItem>();
+        var embeddings = await _libraryService.GetEmbeddingsAsync(library, null, ct);
+        var queryImg = embeddings.FirstOrDefault(e => e.ParentId == imageId);
+        if (queryImg == null) return Array.Empty<SearchResultItem>();
+
+        var scored = embeddings
+            .Where(e => e.ParentId != imageId && e.ModelName == queryImg.ModelName)
+            .Select(e => new 
+            { 
+                ImageId = e.ParentId, 
+                Score = ComputeCosineSimilarity(queryImg.Vector, queryImg.VectorNorm, e.Vector, e.VectorNorm) 
+            })
+            .OrderByDescending(x => x.Score)
+            .Take(limit)
+            .ToList();
+
+        if (!scored.Any()) return Array.Empty<SearchResultItem>();
+
+        var metadata = await FetchMetadataBatchAsync(library, scored.Select(s => s.ImageId).ToList(), ct);
+        return scored
+            .Where(s => metadata.ContainsKey(s.ImageId))
+            .Select(s => metadata[s.ImageId] with { Score = s.Score })
+            .ToList();
     }
 
-    public Task<IReadOnlyList<SearchResultItem>> FindSimilarFacesAsync(Guid libraryId, string faceId, int limit = 10, CancellationToken ct = default)
+    public async Task<IReadOnlyList<SearchResultItem>> FindSimilarFacesAsync(Guid libraryId, string faceId, int limit = 10, CancellationToken ct = default)
     {
-        return Task.FromResult<IReadOnlyList<SearchResultItem>>(new List<SearchResultItem>());
+        var library = await _libraryRegistry.GetLibraryByIdAsync(libraryId, ct);
+        if (library == null) throw new InvalidOperationException("Library not found.");
+
+        // 1. Get query face embedding
+        var faceEmbeddings = await _libraryService.GetFaceEmbeddingsAsync(library, null, ct);
+        var queryFace = faceEmbeddings.FirstOrDefault(f => f.FaceId == faceId);
+        if (queryFace == null) return Array.Empty<SearchResultItem>();
+
+        // 2. Compute similarities to all faces in library
+        var scoredFaces = faceEmbeddings
+            .Where(f => f.FaceId != faceId && f.ModelName == queryFace.ModelName)
+            .Select(f => new 
+            { 
+                FaceId = f.FaceId, 
+                Score = ComputeCosineSimilarity(queryFace.Vector, queryFace.VectorNorm, f.Vector, f.VectorNorm) 
+            })
+            .OrderByDescending(x => x.Score)
+            .ToList();
+
+        if (!scoredFaces.Any()) return Array.Empty<SearchResultItem>();
+
+        // 3. Map face IDs to image IDs
+        var faceToImage = await FetchFaceToImageMapAsync(library, scoredFaces.Select(s => s.FaceId).ToList(), ct);
+
+        // 4. Take top unique images
+        var results = new List<SearchResultItem>();
+        var seenImages = new HashSet<string>();
+        
+        foreach (var sf in scoredFaces)
+        {
+            if (faceToImage.TryGetValue(sf.FaceId, out var imgId) && !seenImages.Contains(imgId))
+            {
+                seenImages.Add(imgId);
+                var meta = await FetchMetadataBatchAsync(library, new List<string> { imgId }, ct);
+                if (meta.TryGetValue(imgId, out var item))
+                {
+                    results.Add(item with { Score = sf.Score });
+                }
+                if (results.Count >= limit) break;
+            }
+        }
+
+        return results;
+    }
+
+    private async Task<Dictionary<string, string>> FetchFaceToImageMapAsync(Library library, List<string> faceIds, CancellationToken ct)
+    {
+        var catalogPath = Path.Combine(library.RootPath, ".imagecaptionsearch", "catalog.db");
+        using var connection = new SqliteConnection($"Data Source={catalogPath}");
+        await connection.OpenAsync(ct);
+
+        using var command = connection.CreateCommand();
+        var idList = string.Join(",", faceIds.Select(id => $"'{id}'"));
+        command.CommandText = $"SELECT id, image_id FROM faces WHERE id IN ({idList})";
+
+        var map = new Dictionary<string, string>();
+        using var reader = await command.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            map[reader.GetString(0)] = reader.GetString(1);
+        }
+        return map;
     }
 }

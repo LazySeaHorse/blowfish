@@ -15,5 +15,6 @@ public record SearchResultItem(
      string? CaptionSnippet,
      bool HasHuman,
      double Score,
-     string? ThumbnailRelPath
+     string? ThumbnailRelPath,
+     string? LastError = null
 );

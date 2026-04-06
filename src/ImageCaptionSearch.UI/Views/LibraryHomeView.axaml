@@ -73,15 +73,17 @@
                                                       Opacity="0.8"/>
                                         </Border>
                                         
-                                        <StackPanel Grid.Row="1" Padding="15" Spacing="4">
-                                            <TextBlock Text="{Binding Name}" 
-                                                       FontWeight="SemiBold" 
-                                                       TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Text="{Binding Path}" 
-                                                       FontSize="11" 
-                                                       Foreground="#999999" 
-                                                       TextTrimming="CharacterEllipsis"/>
-                                        </StackPanel>
+                                        <Border Grid.Row="1" Padding="15">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Name}" 
+                                                           FontWeight="SemiBold" 
+                                                           TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Path}" 
+                                                           FontSize="11" 
+                                                           Foreground="#999999" 
+                                                           TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                        </Border>
                                     </Grid>
                                 </Button>
                             </Border>

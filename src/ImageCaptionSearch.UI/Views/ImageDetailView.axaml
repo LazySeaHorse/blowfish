@@ -35,6 +35,17 @@
             <Grid RowDefinitions="*,Auto">
                 <ScrollViewer Padding="24">
                     <StackPanel Spacing="32">
+                        <!-- Error Section (if failed) -->
+                        <Border Background="#fff1f0" BorderBrush="#ffa39e" BorderThickness="1" CornerRadius="8" Padding="16" IsVisible="{Binding Result.LastError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                            <StackPanel Spacing="8">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <PathIcon Data="{StaticResource ErrorIcon}" Width="14" Height="14" Foreground="#f5222d"/>
+                                    <TextBlock Text="Processing Error" FontSize="14" FontWeight="SemiBold" Foreground="#cf1322"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding Result.LastError}" FontSize="12" Foreground="#333333" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
                         <!-- Caption Section -->
                         <StackPanel Spacing="12">
                             <TextBlock Text="Caption" FontSize="14" FontWeight="SemiBold" Foreground="#999999"/>
@@ -75,7 +86,10 @@
 
                 <!-- Bottom Sticky (Similar Search) -->
                 <Border Grid.Row="1" Padding="24" Background="#f8f9fa" BorderBrush="#e0e0e0" BorderThickness="0,1,0,0">
-                     <Button HorizontalAlignment="Stretch" Classes="accent" Padding="16,16" CornerRadius="12">Find Similar Images</Button>
+                    <StackPanel Spacing="12">
+                        <Button HorizontalAlignment="Stretch" Command="{Binding FindSimilarImagesCommand}" Classes="accent" Padding="16,16" CornerRadius="12">Find Similar Images</Button>
+                        <Button HorizontalAlignment="Stretch" Command="{Binding FindSimilarFacesCommand}" CommandParameter="{Binding Faces[0].Id}" IsVisible="{Binding FaceCount}" Padding="16,16" CornerRadius="12">Find Similar Faces</Button>
+                    </StackPanel>
                 </Border>
             </Grid>
         </Border>

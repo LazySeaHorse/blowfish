@@ -17,44 +17,50 @@
         <Border Background="#f8f9fa" BorderBrush="#e0e0e0" BorderThickness="0,0,1,0">
             <Grid RowDefinitions="Auto,*,Auto">
                 <!-- App Logo/Name -->
-                <StackPanel Orientation="Horizontal" Spacing="12" Padding="24,48,24,32">
-                    <Border Width="32" Height="32" Background="#4a90e2" CornerRadius="8">
-                        <PathIcon Data="{StaticResource FolderIcon}" Width="16" Height="16" Foreground="White"/>
-                    </Border>
-                    <TextBlock Text="Blowfish" FontSize="20" FontWeight="Bold" VerticalAlignment="Center" Foreground="#1a1a1a"/>
-                </StackPanel>
+                <Border Padding="24,48,24,32">
+                  <StackPanel Orientation="Horizontal" Spacing="12">
+                      <Border Width="32" Height="32" Background="#4a90e2" CornerRadius="8">
+                          <PathIcon Data="{StaticResource FolderIcon}" Width="16" Height="16" Foreground="White"/>
+                      </Border>
+                      <TextBlock Text="Blowfish" FontSize="20" FontWeight="Bold" VerticalAlignment="Center" Foreground="#1a1a1a"/>
+                  </StackPanel>
+                </Border>
 
                 <!-- Nav Links -->
-                <StackPanel Grid.Row="1" Spacing="4" Padding="12,0">
-                    <Button HorizontalAlignment="Stretch" 
-                            HorizontalContentAlignment="Left"
-                            Background="Transparent" 
-                            BorderThickness="0" 
-                            CornerRadius="8"
-                            Padding="12,10"
-                            Command="{Binding NavigateToHomeCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <PathIcon Data="{StaticResource FolderIcon}" Width="18" Height="18" Foreground="#4a90e2"/>
-                            <TextBlock Text="Libraries" VerticalAlignment="Center" FontWeight="Medium"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
+                <Border Grid.Row="1" Padding="12,0">
+                  <StackPanel Spacing="4">
+                      <Button HorizontalAlignment="Stretch" 
+                              HorizontalContentAlignment="Left"
+                              Background="Transparent" 
+                              BorderThickness="0" 
+                              CornerRadius="8"
+                              Padding="12,10"
+                              Command="{Binding NavigateToHomeCommand}">
+                          <StackPanel Orientation="Horizontal" Spacing="12">
+                              <PathIcon Data="{StaticResource FolderIcon}" Width="18" Height="18" Foreground="#4a90e2"/>
+                              <TextBlock Text="Libraries" VerticalAlignment="Center" FontWeight="Medium"/>
+                          </StackPanel>
+                      </Button>
+                  </StackPanel>
+                </Border>
 
                 <!-- Footer / Settings -->
-                <StackPanel Grid.Row="2" Padding="12,24" Spacing="4">
-                    <Button HorizontalAlignment="Stretch" 
-                            HorizontalContentAlignment="Left"
-                            Background="Transparent" 
-                            BorderThickness="0" 
-                            CornerRadius="8"
-                            Padding="12,10"
-                            Command="{Binding NavigateToSettingsCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <PathIcon Data="{StaticResource SettingsIcon}" Width="18" Height="18" Foreground="#666666"/>
-                            <TextBlock Text="Settings" VerticalAlignment="Center" Foreground="#666666"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
+                <Border Grid.Row="2" Padding="12,24">
+                  <StackPanel Spacing="4">
+                      <Button HorizontalAlignment="Stretch" 
+                              HorizontalContentAlignment="Left"
+                              Background="Transparent" 
+                              BorderThickness="0" 
+                              CornerRadius="8"
+                              Padding="12,10"
+                              Command="{Binding NavigateToSettingsCommand}">
+                          <StackPanel Orientation="Horizontal" Spacing="12">
+                              <PathIcon Data="{StaticResource SettingsIcon}" Width="18" Height="18" Foreground="#666666"/>
+                              <TextBlock Text="Settings" VerticalAlignment="Center" Foreground="#666666"/>
+                          </StackPanel>
+                      </Button>
+                  </StackPanel>
+                </Border>
             </Grid>
         </Border>
 

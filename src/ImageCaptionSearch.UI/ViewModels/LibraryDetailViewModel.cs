@@ -12,11 +12,14 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace ImageCaptionSearch.UI.ViewModels;
 
-public partial class LibraryDetailViewModel : ViewModelBase
+public partial class LibraryDetailViewModel : ViewModelBase, IDisposable
 {
     private readonly Library _library;
+    public Library Library => _library;
     private readonly ISearchService _searchService;
     private readonly IIndexingPipelineService _indexingPipeline;
+    private readonly IFaceRecognitionService _faceRecognition;
+    private readonly ISettingsService _settingsService;
     private readonly Action _onBack;
     private CancellationTokenSource? _searchCts;
 
@@ -40,6 +43,9 @@ public partial class LibraryDetailViewModel : ViewModelBase
 
     [ObservableProperty]
     private IndexingProgress _progress;
+    
+    [ObservableProperty]
+    private bool _showFaceWarning;
 
     [ObservableProperty]
     private bool _isSearching;
@@ -56,8 +62,12 @@ public partial class LibraryDetailViewModel : ViewModelBase
         _library = library;
         _searchService = serviceProvider.GetRequiredService<ISearchService>();
         _indexingPipeline = serviceProvider.GetRequiredService<IIndexingPipelineService>();
+        _faceRecognition = serviceProvider.GetRequiredService<IFaceRecognitionService>();
+        _settingsService = serviceProvider.GetRequiredService<ISettingsService>();
         _onBack = onBack;
         _onImageSelected = onImageSelected;
+        
+        _ = CheckFaceServiceAsync();
 
         _indexingPipeline.ProgressChanged += OnProgressChanged;
         _progress = _indexingPipeline.GetProgress();
@@ -175,9 +185,81 @@ public partial class LibraryDetailViewModel : ViewModelBase
         }
     }
 
+    public async Task FindSimilarImagesAsync(string imageId)
+    {
+        _searchCts?.Cancel();
+        _searchCts = new CancellationTokenSource();
+        var token = _searchCts.Token;
+
+        IsSearching = true;
+        try
+        {
+            SearchText = "Similar Images";
+            var items = await _searchService.FindSimilarImagesAsync(_library.Id, imageId, 100, token);
+            Results.Clear();
+            foreach (var item in items)
+            {
+                Results.Add(new SearchResultViewModel(item, _library.RootPath));
+            }
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            IsSearching = false;
+        }
+    }
+
+    public async Task FindSimilarFacesAsync(string faceId)
+    {
+        _searchCts?.Cancel();
+        _searchCts = new CancellationTokenSource();
+        var token = _searchCts.Token;
+
+        IsSearching = true;
+        try
+        {
+            SearchText = "Similar Faces";
+            var items = await _searchService.FindSimilarFacesAsync(_library.Id, faceId, 100, token);
+            Results.Clear();
+            foreach (var item in items)
+            {
+                Results.Add(new SearchResultViewModel(item, _library.RootPath));
+            }
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            IsSearching = false;
+        }
+    }
+
+    private async Task CheckFaceServiceAsync()
+    {
+        var settings = await _settingsService.GetSettingsAsync();
+        if (settings.FaceDetectionEnabled && !_faceRecognition.IsAvailable())
+        {
+            ShowFaceWarning = true;
+        }
+    }
+
     public void Cleanup()
     {
         _indexingPipeline.ProgressChanged -= OnProgressChanged;
+    }
+
+    public void Dispose()
+    {
+        Cleanup();
+        _searchCts?.Cancel();
+        _searchCts?.Dispose();
     }
 }
 
@@ -186,12 +268,14 @@ public partial class SearchResultViewModel : ViewModelBase
     private readonly SearchResultItem _item;
     private readonly string _libraryRoot;
 
+    public string ImageId => _item.ImageId;
     public string ImagePath { get; }
     public string FileName => _item.FileName;
-    public string? Caption => _item.Caption;
+    public string? Caption => _item.CaptionSnippet;
     public bool HasHuman => _item.HasHuman;
     public double Score => _item.Score;
     public string? ThumbnailPath { get; }
+    public string? LastError => _item.LastError;
 
     public SearchResultViewModel(SearchResultItem item, string libraryRoot)
     {

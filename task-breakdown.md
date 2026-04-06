@@ -66,9 +66,9 @@ The goal is to have a minimally usable app as early as possible:
 | M5 | Persistence and search engine | M3, M4 | Caption DB, vector DB, FTS, cosine search | [x] |
 | M6 | Indexing pipeline | M3, M4, M5 | TPL Dataflow queue, retries, progress | [x] |
 | M7 | Search UI and detail views | M5, M6 | Usable MVP search experience | [x] |
-| M8 | Face pipeline | M4, M5, M6 | Gated face embeddings and similar-face search |
-| M9 | Settings, resiliency, logging | M2-M8 | Restart safety, validation, diagnostics |
-| M10 | CI/CD and packaging | M0-M9 | GitHub Actions build/test/package/release |
+| M8 | Face pipeline | M4, M5, M6 | Gated face embeddings and similar-face search | [x] |
+| M9 | Settings, resiliency, logging | M2-M8 | Restart safety, validation, diagnostics | [x] |
+| M10 | CI/CD and packaging | M0-M9 | GitHub Actions build/test/package/release | [x] |
 | M11 | Final polish and acceptance pass | all | MVP validation against spec |
 
 ---
@@ -783,7 +783,7 @@ Interfaces such as:
 
 ## M8. Face Pipeline
 
-### T030. Add face pipeline configuration model
+### [x] T030. Add face pipeline configuration model
 **Goal:** Prepare the face subsystem without polluting other services.
 
 **Deliverables**
@@ -803,7 +803,7 @@ Interfaces such as:
 
 ---
 
-### T031. Implement gated face detection and embedding
+### [x] T031. Implement gated face detection and embedding
 **Goal:** Run face processing only when `has_human = true`.
 
 **Deliverables**
@@ -823,7 +823,7 @@ Interfaces such as:
 
 ---
 
-### T032. Implement similar-face search
+### [x] T032. Implement similar-face search
 **Goal:** Let the user find visually similar faces within the same library.
 
 **Deliverables**
@@ -841,7 +841,7 @@ Interfaces such as:
 
 ---
 
-### T033. Surface face status in UI
+### [x] T033. Surface face status in UI
 **Goal:** Make face functionality visible but not intrusive.
 
 **Deliverables**
@@ -860,7 +860,7 @@ Interfaces such as:
 
 ## M9. Settings, Resiliency, and Logging
 
-### T034. Implement Settings UI and persistence
+### [x] T034. Implement Settings UI and persistence
 **Goal:** Let users configure LM Studio, indexing, and face options.
 
 **Deliverables**
@@ -893,7 +893,7 @@ Interfaces such as:
 
 ---
 
-### T035. Implement startup recovery and interrupted-job handling
+### [x] T035. Implement startup recovery and interrupted-job handling
 **Goal:** Survive app restarts and failures gracefully.
 
 **Deliverables**
@@ -911,7 +911,7 @@ Interfaces such as:
 
 ---
 
-### T036. Implement structured logging
+### [x] T036. Implement structured logging
 **Goal:** Aid debugging without exposing unnecessary data.
 
 **Deliverables**
@@ -934,7 +934,7 @@ Interfaces such as:
 
 ---
 
-### T037. Improve error surfaces in UI
+### [x] T037. Improve error surfaces in UI
 **Goal:** Show actionable user-facing states instead of raw exceptions.
 
 **Deliverables**
@@ -960,7 +960,7 @@ Interfaces such as:
 
 ## M10. CI/CD and Packaging
 
-### T038. Implement CI workflow
+### [x] T038. Implement CI workflow
 **Goal:** Ensure the repo is always buildable and validated.
 
 **Deliverables**
@@ -979,7 +979,7 @@ Interfaces such as:
 
 ---
 
-### T039. Implement release workflow
+### [x] T039. Implement release workflow
 **Goal:** Produce a distributable Windows artifact.
 
 **Deliverables**

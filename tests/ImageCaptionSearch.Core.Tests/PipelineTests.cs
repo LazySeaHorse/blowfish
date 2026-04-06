@@ -9,6 +9,7 @@ using ImageCaptionSearch.Core.Models;
 using ImageCaptionSearch.Core.Services;
 using Moq;
 using Xunit;
+using Microsoft.Extensions.Logging;
 
 namespace ImageCaptionSearch.Core.Tests;
 
@@ -21,6 +22,7 @@ public class PipelineTests
     private readonly Mock<ICaptionService> _mockCaption;
     private readonly Mock<IEmbeddingService> _mockEmbedding;
     private readonly Mock<ISettingsService> _mockSettings;
+    private readonly Mock<IFaceRecognitionService> _mockFace;
     private readonly IndexingPipelineService _pipeline;
     private readonly Library _testLib;
 
@@ -33,6 +35,8 @@ public class PipelineTests
         _mockCaption = new Mock<ICaptionService>();
         _mockEmbedding = new Mock<IEmbeddingService>();
         _mockSettings = new Mock<ISettingsService>();
+        _mockFace = new Mock<IFaceRecognitionService>();
+        var mockLogger = new Mock<ILogger<IndexingPipelineService>>();
 
         _pipeline = new IndexingPipelineService(
             _mockRegistry.Object,
@@ -41,7 +45,9 @@ public class PipelineTests
             _mockThumbnail.Object,
             _mockCaption.Object,
             _mockEmbedding.Object,
-            _mockSettings.Object
+            _mockFace.Object,
+            _mockSettings.Object,
+            mockLogger.Object
         );
 
         _testLib = new Library(Guid.NewGuid(), "path", "test", DateTime.UtcNow, null);
@@ -57,6 +63,8 @@ public class PipelineTests
             .ReturnsAsync(new AppSettings());
         _mockLibrary.Setup(l => l.GetImagesAsync(It.IsAny<Library>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<ImageRecord>());
+        _mockLibrary.Setup(l => l.GetActiveJobsAsync(It.IsAny<Library>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ProcessingJob>());
         _mockScan.Setup(s => s.ScanAsync(It.IsAny<string>(), It.IsAny<IReadOnlyList<ImageRecord>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ScanResult(new List<ImageRecord>(), new List<ImageRecord>(), new List<string>()));
 
@@ -80,11 +88,17 @@ public class PipelineTests
             .ReturnsAsync(new AppSettings { MaxConcurrency = 1 });
         _mockLibrary.Setup(l => l.GetImagesAsync(It.IsAny<Library>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<ImageRecord>());
+        _mockLibrary.Setup(l => l.GetActiveJobsAsync(It.IsAny<Library>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ProcessingJob>());
         _mockScan.Setup(s => s.ScanAsync(It.IsAny<string>(), It.IsAny<IReadOnlyList<ImageRecord>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ScanResult(new List<ImageRecord> { image }, new List<ImageRecord>(), new List<string>()));
         _mockLibrary.Setup(l => l.UpsertImagesAsync(It.IsAny<Library>(), It.IsAny<IEnumerable<ImageRecord>>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _mockLibrary.Setup(l => l.SaveEmbeddingAsync(It.IsAny<Library>(), It.IsAny<EmbeddingRecord>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _mockLibrary.Setup(l => l.UpsertJobAsync(It.IsAny<Library>(), It.IsAny<ProcessingJob>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _mockLibrary.Setup(l => l.RemoveJobAsync(It.IsAny<Library>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         _mockThumbnail.Setup(t => t.GetImageDimensionsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

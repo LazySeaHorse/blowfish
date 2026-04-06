@@ -7,5 +7,8 @@ public record AppSettings(
     int CaptionTimeoutSeconds = 300,
     int EmbeddingTimeoutSeconds = 120,
     int MaxConcurrency = 2,
-    int MaxRetries = 3
+    int MaxRetries = 3,
+    bool FaceDetectionEnabled = false,
+    string? FaceDetectorModelPath = null,
+    string? FaceRecognizerModelPath = null
 );

@@ -1,5 +1,7 @@
 using System;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+
 using ImageCaptionSearch.Core.Interfaces;
 using ImageCaptionSearch.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,8 +32,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public void NavigateToHome()
     {
+        _libraryDetailViewModel?.Dispose();
         _libraryDetailViewModel = null;
-        CurrentPage = new LibraryHomeViewModel(_libraryRegistry, OnLibrarySelected);
+        CurrentPage = new LibraryHomeViewModel(_serviceProvider.GetRequiredService<ILibraryRegistryService>(), OnLibrarySelected);
     }
 
     private LibraryDetailViewModel? _libraryDetailViewModel;
@@ -46,7 +49,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void OnImageSelected(SearchResultViewModel result)
     {
-        CurrentPage = new ImageDetailViewModel(result, () => 
+        if (_libraryDetailViewModel == null) return;
+        CurrentPage = new ImageDetailViewModel(result, _libraryDetailViewModel.Library, _serviceProvider, OnSearchSimilar, () => 
         {
             if (_libraryDetailViewModel != null)
             {
@@ -57,6 +61,22 @@ public partial class MainWindowViewModel : ViewModelBase
                 NavigateToHome();
             }
         });
+    }
+
+    private void OnSearchSimilar(Library library, string id, SearchMode mode)
+    {
+        if (_libraryDetailViewModel != null)
+        {
+            CurrentPage = _libraryDetailViewModel;
+            if (mode == SearchMode.Semantic)
+            {
+                _ = _libraryDetailViewModel.FindSimilarImagesAsync(id);
+            }
+            else if (mode == SearchMode.FaceSimilarity)
+            {
+                _ = _libraryDetailViewModel.FindSimilarFacesAsync(id);
+            }
+        }
     }
 
     [RelayCommand]

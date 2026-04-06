@@ -19,6 +19,9 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private string? _visionModelId;
     [ObservableProperty] private string? _embeddingModelId;
     [ObservableProperty] private int _maxConcurrency = 2;
+    [ObservableProperty] private bool _faceDetectionEnabled;
+    [ObservableProperty] private string? _faceDetectorModelPath;
+    [ObservableProperty] private string? _faceRecognizerModelPath;
     [ObservableProperty] private bool _isTesting;
     [ObservableProperty] private string? _testResult;
     [ObservableProperty] private ObservableCollection<string> _availableModels = new();
@@ -34,12 +37,16 @@ public partial class SettingsViewModel : ViewModelBase
         SaveCommand = new AsyncRelayCommand(SaveAsync);
         TestConnectionCommand = new AsyncRelayCommand(TestConnectionAsync);
         RefreshModelsCommand = new AsyncRelayCommand(RefreshModelsAsync);
+        SelectDetectorFileCommand = new AsyncRelayCommand(SelectDetectorFileAsync);
+        SelectRecognizerFileCommand = new AsyncRelayCommand(SelectRecognizerFileAsync);
         NavigateBackCommand = new RelayCommand(onBack);
     }
 
     public IAsyncRelayCommand SaveCommand { get; }
     public IAsyncRelayCommand TestConnectionCommand { get; }
     public IAsyncRelayCommand RefreshModelsCommand { get; }
+    public IAsyncRelayCommand SelectDetectorFileCommand { get; }
+    public IAsyncRelayCommand SelectRecognizerFileCommand { get; }
     public IRelayCommand NavigateBackCommand { get; }
 
     private async Task LoadSettingsAsync()
@@ -49,8 +56,21 @@ public partial class SettingsViewModel : ViewModelBase
         VisionModelId = s.VisionModelId;
         EmbeddingModelId = s.EmbeddingModelId;
         MaxConcurrency = s.MaxConcurrency;
+        FaceDetectionEnabled = s.FaceDetectionEnabled;
+        FaceDetectorModelPath = s.FaceDetectorModelPath;
+        FaceRecognizerModelPath = s.FaceRecognizerModelPath;
         
         await RefreshModelsAsync();
+    }
+
+    private async Task SelectDetectorFileAsync()
+    {
+        // TODO: Open file picker
+    }
+
+    private async Task SelectRecognizerFileAsync()
+    {
+        // TODO: Open file picker
     }
 
     private async Task TestConnectionAsync()
@@ -90,7 +110,10 @@ public partial class SettingsViewModel : ViewModelBase
             LmStudioBaseUrl = BaseUrl, 
             VisionModelId = VisionModelId, 
             EmbeddingModelId = EmbeddingModelId,
-            MaxConcurrency = MaxConcurrency
+            MaxConcurrency = MaxConcurrency,
+            FaceDetectionEnabled = FaceDetectionEnabled,
+            FaceDetectorModelPath = FaceDetectorModelPath,
+            FaceRecognizerModelPath = FaceRecognizerModelPath
         };
         await _settingsService.UpdateSettingsAsync(updated);
         _onBack();

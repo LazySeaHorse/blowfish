@@ -68,6 +68,30 @@
 
                 <Separator />
 
+                <!-- Face Recognition -->
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Face Recognition" FontSize="18" FontWeight="SemiBold"/>
+                    <CheckBox IsChecked="{Binding FaceDetectionEnabled}" Content="Enable Local Face Detection" />
+
+                    <StackPanel Spacing="8" IsEnabled="{Binding FaceDetectionEnabled}">
+                        <TextBlock Text="Face Detector ONNX Model Path" FontSize="14" Foreground="#666666"/>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBox Text="{Binding FaceDetectorModelPath}" Watermark="C:\path\to\ultraface.onnx" />
+                            <Button Grid.Column="1" Command="{Binding SelectDetectorFileCommand}" Content="..." Margin="8,0,0,0" />
+                        </Grid>
+                    </StackPanel>
+
+                    <StackPanel Spacing="8" IsEnabled="{Binding FaceDetectionEnabled}">
+                        <TextBlock Text="Face Recognizer (MobileFaceNet) ONNX Model Path" FontSize="14" Foreground="#666666"/>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBox Text="{Binding FaceRecognizerModelPath}" Watermark="C:\path\to\mobilefacenet.onnx" />
+                            <Button Grid.Column="1" Command="{Binding SelectRecognizerFileCommand}" Content="..." Margin="8,0,0,0" />
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+
+                <Separator />
+
                 <!-- Performance -->
                 <StackPanel Spacing="16">
                     <TextBlock Text="Performance" FontSize="18" FontWeight="SemiBold"/>
