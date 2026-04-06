@@ -82,6 +82,14 @@ public class IndexingPipelineService : IIndexingPipelineService
                 await _libraryService.MarkMissingAsync(library, scanResult.MissingIds, token);
             }
 
+            // Persist newly discovered images immediately. ScanService only returns them as
+            // in-memory objects; UpsertJobAsync has a FK on images(id) and will fail with
+            // FOREIGN KEY constraint violated if the row doesn't exist first.
+            if (scanResult.NewItems.Count > 0)
+            {
+                await _libraryService.UpsertImagesAsync(library, scanResult.NewItems, token);
+            }
+
             // Combine new, modified, and any pending items
             var pendingFromDb = existing.Where(i => i.Status != ProcessingState.Completed && i.Status != ProcessingState.Failed && !i.IsMissing);
             

@@ -70,8 +70,7 @@ public class LmStudioClient : ILmStudioClient
             {
                 model = modelId,
                 messages = messages,
-                temperature = 0.0,
-                response_format = new { type = "json_object" }
+                temperature = 0.0
             };
 
             var response = await _httpClient.PostAsJsonAsync(url, requestBody, ct);

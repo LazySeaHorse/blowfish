@@ -430,6 +430,36 @@ public class LibraryService : ILibraryService
             new SqliteParameter("@id", imageId));
     }
 
+    public async Task ResetLibraryIndexAsync(Library library, CancellationToken ct = default)
+    {
+        var internalPath = Path.Combine(library.RootPath, ".imagecaptionsearch");
+        var catalogPath = Path.Combine(internalPath, "catalog.db");
+        var vectorsPath = Path.Combine(internalPath, "vectors.db");
+
+        using (var connection = new SqliteConnection($"Data Source={catalogPath}"))
+        {
+            await connection.OpenAsync(ct);
+            using var transaction = connection.BeginTransaction();
+            // Deleting captions triggers captions_ad which cleans up captions_fts
+            await ExecuteCommandAsync(connection, "DELETE FROM captions", transaction, ct);
+            await ExecuteCommandAsync(connection, "DELETE FROM faces", transaction, ct);
+            await ExecuteCommandAsync(connection, "DELETE FROM processing_jobs", transaction, ct);
+            await ExecuteCommandAsync(connection,
+                "UPDATE images SET status = 'Pending', last_processed_utc = NULL, last_error = NULL, thumbnail_rel_path = NULL WHERE is_missing = 0",
+                transaction, ct);
+            await transaction.CommitAsync(ct);
+        }
+
+        using (var connection = new SqliteConnection($"Data Source={vectorsPath}"))
+        {
+            await connection.OpenAsync(ct);
+            using var transaction = connection.BeginTransaction();
+            await ExecuteCommandAsync(connection, "DELETE FROM image_embeddings", transaction, ct);
+            await ExecuteCommandAsync(connection, "DELETE FROM face_embeddings", transaction, ct);
+            await transaction.CommitAsync(ct);
+        }
+    }
+
     private async Task InitializeCatalogDbAsync(string dbPath, CancellationToken ct)
     {
         using var connection = new SqliteConnection($"Data Source={dbPath}");

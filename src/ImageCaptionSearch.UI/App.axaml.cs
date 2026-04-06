@@ -60,11 +60,15 @@ public partial class App : Application
     private void ConfigureServices(ServiceCollection services)
     {
         // Infrastructure
-        services.AddHttpClient<ILmStudioClient, LmStudioClient>()
+        services.AddHttpClient<ILmStudioClient, LmStudioClient>(c =>
+                {
+                    // No global timeout — CaptionService and EmbeddingService create
+                    // per-operation CancellationTokens from their AppSettings values.
+                    c.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                })
                 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
                 {
-                    // For local development with LM Studio, sometimes timeouts are long
-                    // but we handle them via settings.
+                    // For local development with LM Studio
                 });
 
         // Core Services

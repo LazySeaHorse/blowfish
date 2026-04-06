@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 using ImageCaptionSearch.Core.Interfaces;
 using ImageCaptionSearch.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace ImageCaptionSearch.UI.ViewModels;
 
@@ -19,6 +20,7 @@ public partial class ImageDetailViewModel : ViewModelBase
     private readonly Library _library;
     private readonly ILibraryService _libraryService;
     private readonly ISearchService _searchService;
+    private readonly ILogger<ImageDetailViewModel> _logger;
     private readonly Action _onBack;
     private readonly Action<Library, string, SearchMode> _onSearchSimilar;
 
@@ -34,6 +36,7 @@ public partial class ImageDetailViewModel : ViewModelBase
         SearchResultViewModel result, 
         Library library,
         IServiceProvider serviceProvider,
+        ILogger<ImageDetailViewModel> logger,
         Action<Library, string, SearchMode> onSearchSimilar,
         Action onBack)
     {
@@ -41,13 +44,13 @@ public partial class ImageDetailViewModel : ViewModelBase
         _library = library;
         _libraryService = serviceProvider.GetRequiredService<ILibraryService>();
         _searchService = serviceProvider.GetRequiredService<ISearchService>();
+        _logger = logger;
         _onSearchSimilar = onSearchSimilar;
         _onBack = onBack;
 
         NavigateBackCommand = new RelayCommand(onBack);
         OpenImageCommand = new RelayCommand(OpenImage);
         ShowInExplorerCommand = new RelayCommand(ShowInExplorer);
-        CopyCaptionCommand = new RelayCommand(CopyCaption);
         FindSimilarImagesCommand = new AsyncRelayCommand(FindSimilarImagesAsync);
         FindSimilarFacesCommand = new AsyncRelayCommand<string>(FindSimilarFacesAsync);
 
@@ -57,7 +60,6 @@ public partial class ImageDetailViewModel : ViewModelBase
     public IRelayCommand NavigateBackCommand { get; }
     public IRelayCommand OpenImageCommand { get; }
     public IRelayCommand ShowInExplorerCommand { get; }
-    public IRelayCommand CopyCaptionCommand { get; }
     public IAsyncRelayCommand FindSimilarImagesCommand { get; }
     public IAsyncRelayCommand<string> FindSimilarFacesCommand { get; }
 
@@ -72,7 +74,7 @@ public partial class ImageDetailViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex, "Failed to load face data for {ImageId}", _result.ImageId);
         }
     }
 
@@ -84,7 +86,7 @@ public partial class ImageDetailViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex, "Failed to open image {Path}", _result.ImagePath);
         }
     }
 
@@ -97,14 +99,8 @@ public partial class ImageDetailViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex, "Failed to show in explorer: {Path}", _result.ImagePath);
         }
-    }
-
-    private void CopyCaption()
-    {
-        // Actually copy to clipboard would be platform-specific but we can print for now
-        // This should probably be handled in the View or via an interface
     }
 
     private async Task FindSimilarImagesAsync()

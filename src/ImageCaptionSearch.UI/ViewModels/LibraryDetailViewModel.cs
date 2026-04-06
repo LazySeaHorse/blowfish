@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.Input;
 using ImageCaptionSearch.Core.Interfaces;
 using ImageCaptionSearch.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace ImageCaptionSearch.UI.ViewModels;
 
@@ -16,10 +17,12 @@ public partial class LibraryDetailViewModel : ViewModelBase, IDisposable
 {
     private readonly Library _library;
     public Library Library => _library;
+    private readonly ILibraryService _libraryService;
     private readonly ISearchService _searchService;
     private readonly IIndexingPipelineService _indexingPipeline;
     private readonly IFaceRecognitionService _faceRecognition;
     private readonly ISettingsService _settingsService;
+    private readonly ILogger<LibraryDetailViewModel> _logger;
     private readonly Action _onBack;
     private CancellationTokenSource? _searchCts;
 
@@ -57,13 +60,15 @@ public partial class LibraryDetailViewModel : ViewModelBase, IDisposable
 
     private readonly Action<SearchResultViewModel> _onImageSelected;
 
-    public LibraryDetailViewModel(Library library, IServiceProvider serviceProvider, Action<SearchResultViewModel> onImageSelected, Action onBack)
+    public LibraryDetailViewModel(Library library, IServiceProvider serviceProvider, ILogger<LibraryDetailViewModel> logger, Action<SearchResultViewModel> onImageSelected, Action onBack)
     {
         _library = library;
+        _libraryService = serviceProvider.GetRequiredService<ILibraryService>();
         _searchService = serviceProvider.GetRequiredService<ISearchService>();
         _indexingPipeline = serviceProvider.GetRequiredService<IIndexingPipelineService>();
         _faceRecognition = serviceProvider.GetRequiredService<IFaceRecognitionService>();
         _settingsService = serviceProvider.GetRequiredService<ISettingsService>();
+        _logger = logger;
         _onBack = onBack;
         _onImageSelected = onImageSelected;
         
@@ -75,6 +80,7 @@ public partial class LibraryDetailViewModel : ViewModelBase, IDisposable
         SearchCommand = new AsyncRelayCommand(ExecuteSearchAsync);
         NavigateBackCommand = new RelayCommand(onBack);
         StartIndexingCommand = new AsyncRelayCommand(StartIndexingAsync);
+        RebuildIndexCommand = new AsyncRelayCommand(RebuildIndexAsync);
         PauseIndexingCommand = new AsyncRelayCommand(() => _indexingPipeline.PauseAsync());
         ResumeIndexingCommand = new AsyncRelayCommand(() => _indexingPipeline.ResumeAsync());
         CancelIndexingCommand = new AsyncRelayCommand(() => _indexingPipeline.CancelAsync());
@@ -98,6 +104,7 @@ public partial class LibraryDetailViewModel : ViewModelBase, IDisposable
     public IAsyncRelayCommand SearchCommand { get; }
     public IRelayCommand NavigateBackCommand { get; }
     public IAsyncRelayCommand StartIndexingCommand { get; }
+    public IAsyncRelayCommand RebuildIndexCommand { get; }
     public IAsyncRelayCommand PauseIndexingCommand { get; }
     public IAsyncRelayCommand ResumeIndexingCommand { get; }
     public IAsyncRelayCommand CancelIndexingCommand { get; }
@@ -164,8 +171,7 @@ public partial class LibraryDetailViewModel : ViewModelBase, IDisposable
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            // Handle error
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex, "Search failed for library {LibraryId}", _library.Id);
         }
         finally
         {
@@ -173,15 +179,29 @@ public partial class LibraryDetailViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private async Task StartIndexingAsync()
+    public async Task StartIndexingAsync()
     {
         try
         {
             await _indexingPipeline.StartAsync(_library.Id);
+            await ExecuteSearchAsync();
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex, "Failed to start indexing for library {LibraryId}", _library.Id);
+        }
+    }
+
+    private async Task RebuildIndexAsync()
+    {
+        try
+        {
+            await _libraryService.ResetLibraryIndexAsync(_library);
+            await StartIndexingAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to rebuild index for library {LibraryId}", _library.Id);
         }
     }
 
@@ -205,7 +225,7 @@ public partial class LibraryDetailViewModel : ViewModelBase, IDisposable
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex, "Finding similar images failed for {ImageId}", imageId);
         }
         finally
         {
@@ -233,7 +253,7 @@ public partial class LibraryDetailViewModel : ViewModelBase, IDisposable
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex, "Finding similar faces failed for {FaceId}", faceId);
         }
         finally
         {

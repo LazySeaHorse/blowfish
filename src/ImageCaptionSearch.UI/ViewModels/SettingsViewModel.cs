@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ImageCaptionSearch.Core.Interfaces;
 using ImageCaptionSearch.Core.Models;
+using Microsoft.Extensions.Logging;
 
 namespace ImageCaptionSearch.UI.ViewModels;
 
@@ -13,6 +14,7 @@ public partial class SettingsViewModel : ViewModelBase
 {
     private readonly ISettingsService _settingsService;
     private readonly ILmStudioClient _lmClient;
+    private readonly ILogger<SettingsViewModel> _logger;
     private readonly Action _onBack;
 
     [ObservableProperty] private string _baseUrl = "http://127.0.0.1:1234";
@@ -26,51 +28,40 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private string? _testResult;
     [ObservableProperty] private ObservableCollection<string> _availableModels = new();
 
-    public SettingsViewModel(ISettingsService settingsService, ILmStudioClient lmClient, Action onBack)
+    public SettingsViewModel(ISettingsService settingsService, ILmStudioClient lmClient, ILogger<SettingsViewModel> logger, Action onBack)
     {
         _settingsService = settingsService;
         _lmClient = lmClient;
+        _logger = logger;
         _onBack = onBack;
         
         _ = LoadSettingsAsync();
-        
+
         SaveCommand = new AsyncRelayCommand(SaveAsync);
         TestConnectionCommand = new AsyncRelayCommand(TestConnectionAsync);
         RefreshModelsCommand = new AsyncRelayCommand(RefreshModelsAsync);
-        SelectDetectorFileCommand = new AsyncRelayCommand(SelectDetectorFileAsync);
-        SelectRecognizerFileCommand = new AsyncRelayCommand(SelectRecognizerFileAsync);
         NavigateBackCommand = new RelayCommand(onBack);
     }
 
     public IAsyncRelayCommand SaveCommand { get; }
     public IAsyncRelayCommand TestConnectionCommand { get; }
     public IAsyncRelayCommand RefreshModelsCommand { get; }
-    public IAsyncRelayCommand SelectDetectorFileCommand { get; }
-    public IAsyncRelayCommand SelectRecognizerFileCommand { get; }
     public IRelayCommand NavigateBackCommand { get; }
 
     private async Task LoadSettingsAsync()
     {
         var s = await _settingsService.GetSettingsAsync();
         BaseUrl = s.LmStudioBaseUrl;
-        VisionModelId = s.VisionModelId;
-        EmbeddingModelId = s.EmbeddingModelId;
         MaxConcurrency = s.MaxConcurrency;
         FaceDetectionEnabled = s.FaceDetectionEnabled;
         FaceDetectorModelPath = s.FaceDetectorModelPath;
         FaceRecognizerModelPath = s.FaceRecognizerModelPath;
-        
+
+        // Prime the selections so RefreshModelsAsync restores them after clearing the list
+        VisionModelId = s.VisionModelId;
+        EmbeddingModelId = s.EmbeddingModelId;
+
         await RefreshModelsAsync();
-    }
-
-    private async Task SelectDetectorFileAsync()
-    {
-        // TODO: Open file picker
-    }
-
-    private async Task SelectRecognizerFileAsync()
-    {
-        // TODO: Open file picker
     }
 
     private async Task TestConnectionAsync()
@@ -84,6 +75,7 @@ public partial class SettingsViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Test connection failed for {BaseUrl}", BaseUrl);
             TestResult = $"Error: {ex.Message}";
         }
         finally
@@ -94,13 +86,31 @@ public partial class SettingsViewModel : ViewModelBase
 
     private async Task RefreshModelsAsync()
     {
+        // Snapshot selections before clearing: AvailableModels.Clear() causes the ComboBox
+        // to write null back through the two-way SelectedItem binding.
+        var currentVision = VisionModelId;
+        var currentEmbedding = EmbeddingModelId;
+
         try
         {
             var models = await _lmClient.GetModelsAsync(BaseUrl);
             AvailableModels.Clear();
             foreach (var m in models) AvailableModels.Add(m.Id);
         }
-        catch { /* Ignore if offline */ }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to refresh models from {BaseUrl}", BaseUrl);
+        }
+
+        // Ensure previously selected models remain in the list even if LM Studio doesn't list them
+        if (!string.IsNullOrEmpty(currentVision) && !AvailableModels.Contains(currentVision))
+            AvailableModels.Add(currentVision);
+        if (!string.IsNullOrEmpty(currentEmbedding) && !AvailableModels.Contains(currentEmbedding))
+            AvailableModels.Add(currentEmbedding);
+
+        // Restore selections (cleared by the binding when the collection was wiped)
+        VisionModelId = currentVision;
+        EmbeddingModelId = currentEmbedding;
     }
 
     private async Task SaveAsync()

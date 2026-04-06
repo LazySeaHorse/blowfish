@@ -72,34 +72,40 @@
             </StackPanel>
         </Border>
 
-        <!-- Indexing Status Bar -->
-        <Border Grid.Row="2" Margin="24,0,24,12" Padding="20,12" 
-                Background="#f8f9fa" CornerRadius="12"
-                IsVisible="{Binding Progress.IsRunning}">
-            <Grid ColumnDefinitions="Auto,*,Auto,Auto">
-                <StackPanel Orientation="Horizontal" Spacing="12">
-                    <PathIcon Data="{StaticResource AddIcon}" Width="16" Height="16" Foreground="#4a90e2"/>
-                    <TextBlock Text="Indexing Library..." VerticalAlignment="Center" FontWeight="Medium"/>
-                </StackPanel>
+        <!-- Indexing Toolbar -->
+        <Border Grid.Row="2" Margin="24,0,24,12" Padding="20,12"
+                Background="#f8f9fa" CornerRadius="12">
+            <Panel>
+                <!-- While indexing: progress + pause/stop controls -->
+                <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding Progress.IsRunning}">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <PathIcon Data="{StaticResource AddIcon}" Width="16" Height="16" Foreground="#4a90e2"/>
+                        <TextBlock Text="Indexing Library..." VerticalAlignment="Center" FontWeight="Medium"/>
+                    </StackPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="20" VerticalAlignment="Center" Margin="24,0">
-                    <TextBlock Text="{Binding Progress.CurrentFileName}" FontSize="12" Foreground="#666666" MaxWidth="200" TextTrimming="CharacterEllipsis"/>
-                    <ProgressBar Minimum="0" Maximum="{Binding Progress.TotalCount}" 
-                                 Value="{Binding Progress.ProcessedCount}" 
-                                 Width="200" Height="4"/>
-                    <TextBlock Text="{Binding Progress.ProcessedCount}" FontSize="12" Foreground="#4a90e2" FontWeight="SemiBold"/>
-                    <TextBlock Text="/" FontSize="12" Foreground="#999999"/>
-                    <TextBlock Text="{Binding Progress.TotalCount}" FontSize="12" Foreground="#666666"/>
-                </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="20" VerticalAlignment="Center" Margin="24,0">
+                        <TextBlock Text="{Binding Progress.CurrentFileName}" FontSize="12" Foreground="#666666" MaxWidth="200" TextTrimming="CharacterEllipsis"/>
+                        <ProgressBar Minimum="0" Maximum="{Binding Progress.TotalCount}"
+                                     Value="{Binding Progress.ProcessedCount}"
+                                     Width="200" Height="4"/>
+                        <TextBlock Text="{Binding Progress.ProcessedCount}" FontSize="12" Foreground="#4a90e2" FontWeight="SemiBold"/>
+                        <TextBlock Text="/" FontSize="12" Foreground="#999999"/>
+                        <TextBlock Text="{Binding Progress.TotalCount}" FontSize="12" Foreground="#666666"/>
+                    </StackPanel>
 
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
-                    <Button IsVisible="{Binding !Progress.IsPaused}" Command="{Binding PauseIndexingCommand}" Padding="8,4">Pause</Button>
-                    <Button IsVisible="{Binding Progress.IsPaused}" Command="{Binding ResumeIndexingCommand}" Padding="8,4">Resume</Button>
-                    <Button Command="{Binding CancelIndexingCommand}" Padding="8,4">Stop</Button>
-                </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                        <Button IsVisible="{Binding !Progress.IsPaused}" Command="{Binding PauseIndexingCommand}" Padding="8,4">Pause</Button>
+                        <Button IsVisible="{Binding Progress.IsPaused}" Command="{Binding ResumeIndexingCommand}" Padding="8,4">Resume</Button>
+                        <Button Command="{Binding CancelIndexingCommand}" Padding="8,4">Stop</Button>
+                    </StackPanel>
+                </Grid>
 
-                <Button Grid.Column="3" Margin="12,0,0,0" IsVisible="{Binding !Progress.IsRunning}" Command="{Binding StartIndexingCommand}">Start Indexing</Button>
-            </Grid>
+                <!-- While idle: start / rebuild buttons -->
+                <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding !Progress.IsRunning}">
+                    <Button Command="{Binding StartIndexingCommand}" Classes="accent" Padding="16,8" CornerRadius="8">Start Indexing</Button>
+                    <Button Command="{Binding RebuildIndexCommand}" Padding="16,8" CornerRadius="8" Background="#e8e8e8">Rebuild Full Index</Button>
+                </StackPanel>
+            </Panel>
         </Border>
 
         <!-- Result Grid -->

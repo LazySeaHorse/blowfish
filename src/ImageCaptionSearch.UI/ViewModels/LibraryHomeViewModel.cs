@@ -8,29 +8,38 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ImageCaptionSearch.Core.Interfaces;
 using ImageCaptionSearch.Core.Models;
+using Microsoft.Extensions.Logging;
 
 namespace ImageCaptionSearch.UI.ViewModels;
 
 public partial class LibraryHomeViewModel : ViewModelBase
 {
     private readonly ILibraryRegistryService _libraryRegistry;
-    private readonly Action<Library> _onLibrarySelected;
+    private readonly ILogger<LibraryHomeViewModel> _logger;
+    // bool = autoStartIndexing: true when the library was just created
+    private readonly Action<Library, bool> _onLibrarySelected;
 
     [ObservableProperty]
     private bool _isLoading;
+
+    [ObservableProperty]
+    private string? _errorMessage;
 
     public ObservableCollection<LibraryViewModel> Libraries { get; } = new();
 
     public IAsyncRelayCommand LoadLibrariesCommand { get; }
     public IAsyncRelayCommand AddLibraryCommand { get; }
 
-    public LibraryHomeViewModel(ILibraryRegistryService libraryRegistry, Action<Library> onLibrarySelected)
+    public LibraryHomeViewModel(ILibraryRegistryService libraryRegistry, ILogger<LibraryHomeViewModel> logger, Action<Library, bool> onLibrarySelected)
     {
         _libraryRegistry = libraryRegistry;
+        _logger = logger;
         _onLibrarySelected = onLibrarySelected;
 
         LoadLibrariesCommand = new AsyncRelayCommand(LoadLibrariesInternalAsync);
         AddLibraryCommand = new AsyncRelayCommand(AddLibraryInternalAsync);
+        
+        _ = LoadLibrariesInternalAsync();
     }
 
     private async Task LoadLibrariesInternalAsync()
@@ -45,6 +54,10 @@ public partial class LibraryHomeViewModel : ViewModelBase
                 Libraries.Add(new LibraryViewModel(lib, OpenLibraryCommand, RemoveLibraryCommand));
             }
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load libraries.");
+        }
         finally
         {
             IsLoading = false;
@@ -54,7 +67,7 @@ public partial class LibraryHomeViewModel : ViewModelBase
     [RelayCommand]
     private void OpenLibrary(LibraryViewModel libraryVM)
     {
-        _onLibrarySelected(libraryVM.Library);
+        _onLibrarySelected(libraryVM.Library, false);
     }
 
     [RelayCommand]
@@ -77,12 +90,14 @@ public partial class LibraryHomeViewModel : ViewModelBase
         {
             var library = await _libraryRegistry.AddLibraryAsync(path, displayName);
             await LoadLibrariesInternalAsync();
-            _onLibrarySelected(library);
+            _onLibrarySelected(library, true);
         }
         catch (Exception ex)
         {
-            // TODO: Error reporting
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex, "Failed to add library from path {Path}", path);
+            ErrorMessage = ex is InvalidOperationException or DirectoryNotFoundException or UnauthorizedAccessException
+                ? ex.Message
+                : "Failed to add folder as a library.";
         }
     }
 }

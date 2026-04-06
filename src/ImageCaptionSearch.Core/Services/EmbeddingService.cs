@@ -20,12 +20,15 @@ public class EmbeddingService : IEmbeddingService
         if (string.IsNullOrEmpty(settings.EmbeddingModelId)) 
             throw new InvalidOperationException("Embedding model not selected in settings.");
 
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(TimeSpan.FromSeconds(settings.EmbeddingTimeoutSeconds));
+
         var vector = await _client.GetEmbeddingAsync(
-            settings.LmStudioBaseUrl, 
-            settings.EmbeddingModelId, 
-            text, 
+            settings.LmStudioBaseUrl,
+            settings.EmbeddingModelId,
+            text,
             highPriority,
-            ct);
+            cts.Token);
 
         // Precompute norm for fast cosine similarity: sum of squares
         double sumSquares = 0;

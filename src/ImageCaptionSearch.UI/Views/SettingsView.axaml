@@ -7,29 +7,29 @@
              x:Class="ImageCaptionSearch.UI.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
 
-    <Grid RowDefinitions="Auto,*">
-        
+    <Grid RowDefinitions="Auto,*,Auto">
+
         <!-- Header -->
         <Border Padding="24,24,24,0">
             <StackPanel Orientation="Horizontal" Spacing="20">
-                <Button Command="{Binding NavigateBackCommand}" 
+                <Button Command="{Binding NavigateBackCommand}"
                         Background="Transparent" Padding="8">
                     <PathIcon Data="{StaticResource FolderIcon}" Width="20" Height="20" Foreground="#666666"/>
                 </Button>
-                <TextBlock Text="Settings" 
-                           FontSize="24" FontWeight="SemiBold" 
+                <TextBlock Text="Settings"
+                           FontSize="24" FontWeight="SemiBold"
                            VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
 
-        <!-- Form Area -->
-        <ScrollViewer Grid.Row="1" Padding="48,40">
+        <!-- Scrollable form -->
+        <ScrollViewer Grid.Row="1" Padding="48,24,48,16">
             <StackPanel Spacing="32" MaxWidth="600" HorizontalAlignment="Left">
-                
+
                 <!-- LM Studio Connection -->
                 <StackPanel Spacing="16">
                     <TextBlock Text="LM Studio Integration" FontSize="18" FontWeight="SemiBold"/>
-                    
+
                     <StackPanel Spacing="8">
                         <TextBlock Text="Local API Base URL" FontSize="14" Foreground="#666666"/>
                         <TextBox Text="{Binding BaseUrl}" Watermark="http://127.0.0.1:1234" MaxWidth="400" HorizontalAlignment="Left"/>
@@ -46,19 +46,19 @@
                 <!-- Models -->
                 <StackPanel Spacing="16">
                     <TextBlock Text="Local AI Models" FontSize="18" FontWeight="SemiBold"/>
-                    
+
                     <StackPanel Spacing="8">
-                        <TextBlock Text="Vision Model ID for Captioning" FontSize="14" Foreground="#666666"/>
-                        <ComboBox ItemsSource="{Binding AvailableModels}" 
-                                  SelectedItem="{Binding VisionModelId}" 
+                        <TextBlock Text="Vision Model for Captioning" FontSize="14" Foreground="#666666"/>
+                        <ComboBox ItemsSource="{Binding AvailableModels}"
+                                  SelectedItem="{Binding VisionModelId}"
                                   Width="400" HorizontalAlignment="Left"
                                   PlaceholderText="Select Vision Model..."/>
                     </StackPanel>
 
                     <StackPanel Spacing="8">
-                        <TextBlock Text="Embedding Model ID for Search" FontSize="14" Foreground="#666666"/>
-                        <ComboBox ItemsSource="{Binding AvailableModels}" 
-                                  SelectedItem="{Binding EmbeddingModelId}" 
+                        <TextBlock Text="Embedding Model for Search" FontSize="14" Foreground="#666666"/>
+                        <ComboBox ItemsSource="{Binding AvailableModels}"
+                                  SelectedItem="{Binding EmbeddingModelId}"
                                   Width="400" HorizontalAlignment="Left"
                                   PlaceholderText="Select Embedding Model..."/>
                     </StackPanel>
@@ -77,7 +77,7 @@
                         <TextBlock Text="Face Detector ONNX Model Path" FontSize="14" Foreground="#666666"/>
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBox Text="{Binding FaceDetectorModelPath}" Watermark="C:\path\to\ultraface.onnx" />
-                            <Button Grid.Column="1" Command="{Binding SelectDetectorFileCommand}" Content="..." Margin="8,0,0,0" />
+                            <Button Grid.Column="1" Click="OnSelectDetectorClick" Content="..." Margin="8,0,0,0" />
                         </Grid>
                     </StackPanel>
 
@@ -85,7 +85,7 @@
                         <TextBlock Text="Face Recognizer (MobileFaceNet) ONNX Model Path" FontSize="14" Foreground="#666666"/>
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBox Text="{Binding FaceRecognizerModelPath}" Watermark="C:\path\to\mobilefacenet.onnx" />
-                            <Button Grid.Column="1" Command="{Binding SelectRecognizerFileCommand}" Content="..." Margin="8,0,0,0" />
+                            <Button Grid.Column="1" Click="OnSelectRecognizerClick" Content="..." Margin="8,0,0,0" />
                         </Grid>
                     </StackPanel>
                 </StackPanel>
@@ -95,7 +95,7 @@
                 <!-- Performance -->
                 <StackPanel Spacing="16">
                     <TextBlock Text="Performance" FontSize="18" FontWeight="SemiBold"/>
-                    
+
                     <StackPanel Spacing="8">
                         <TextBlock Text="Max LM Studio Concurrency" FontSize="14" Foreground="#666666"/>
                         <NumericUpDown Value="{Binding MaxConcurrency}" Minimum="1" Maximum="8" Width="120" HorizontalAlignment="Left"/>
@@ -103,13 +103,16 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Actions -->
-                <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,40,0,0">
-                    <Button Command="{Binding SaveCommand}" Content="Save Settings" Classes="accent" Padding="32,16" CornerRadius="8"/>
-                    <Button Command="{Binding NavigateBackCommand}" Content="Cancel" Padding="32,16" CornerRadius="8" Background="Transparent" BorderBrush="#e0e0e0" BorderThickness="1"/>
-                </StackPanel>
-
             </StackPanel>
         </ScrollViewer>
+
+        <!-- Sticky footer — always visible regardless of scroll position -->
+        <Border Grid.Row="2" Padding="48,16" BorderBrush="#e0e0e0" BorderThickness="0,1,0,0" Background="White">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <Button Command="{Binding SaveCommand}" Content="Save Settings" Classes="accent" Padding="32,12" CornerRadius="8"/>
+                <Button Command="{Binding NavigateBackCommand}" Content="Cancel" Padding="32,12" CornerRadius="8" Background="Transparent" BorderBrush="#e0e0e0" BorderThickness="1"/>
+            </StackPanel>
+        </Border>
+
     </Grid>
 </UserControl>

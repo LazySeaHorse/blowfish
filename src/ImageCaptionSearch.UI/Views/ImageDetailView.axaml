@@ -50,7 +50,7 @@
                         <StackPanel Spacing="12">
                             <TextBlock Text="Caption" FontSize="14" FontWeight="SemiBold" Foreground="#999999"/>
                             <TextBlock Text="{Binding Result.Caption}" FontSize="18" TextWrapping="Wrap" />
-                            <Button Command="{Binding CopyCaptionCommand}" Content="Copy Caption" Padding="16,8" CornerRadius="8" Background="#f0f0f0"/>
+                            <Button Click="OnCopyCaptionClick" Content="Copy Caption" Padding="16,8" CornerRadius="8" Background="#f0f0f0"/>
                         </StackPanel>
 
                         <!-- File Section -->

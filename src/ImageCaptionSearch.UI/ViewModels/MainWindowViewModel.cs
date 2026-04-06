@@ -34,23 +34,25 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         _libraryDetailViewModel?.Dispose();
         _libraryDetailViewModel = null;
-        CurrentPage = new LibraryHomeViewModel(_serviceProvider.GetRequiredService<ILibraryRegistryService>(), OnLibrarySelected);
+        CurrentPage = ActivatorUtilities.CreateInstance<LibraryHomeViewModel>(_serviceProvider, (Action<Library, bool>)OnLibrarySelected);
     }
 
     private LibraryDetailViewModel? _libraryDetailViewModel;
 
-    private void OnLibrarySelected(Library library)
+    private void OnLibrarySelected(Library library, bool autoStartIndexing)
     {
-        // Navigate to LibraryDetail
         Title = $"Blowfish - {library.DisplayName}";
-        _libraryDetailViewModel = new LibraryDetailViewModel(library, _serviceProvider, OnImageSelected, NavigateToHome);
+        _libraryDetailViewModel = ActivatorUtilities.CreateInstance<LibraryDetailViewModel>(_serviceProvider, library, (Action<SearchResultViewModel>)OnImageSelected, (Action)NavigateToHome);
         CurrentPage = _libraryDetailViewModel;
+
+        if (autoStartIndexing)
+            _ = _libraryDetailViewModel.StartIndexingAsync();
     }
 
     private void OnImageSelected(SearchResultViewModel result)
     {
         if (_libraryDetailViewModel == null) return;
-        CurrentPage = new ImageDetailViewModel(result, _libraryDetailViewModel.Library, _serviceProvider, OnSearchSimilar, () => 
+        CurrentPage = ActivatorUtilities.CreateInstance<ImageDetailViewModel>(_serviceProvider, result, _libraryDetailViewModel.Library, (Action<Library, string, SearchMode>)OnSearchSimilar, (Action)(() => 
         {
             if (_libraryDetailViewModel != null)
             {
@@ -60,7 +62,7 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 NavigateToHome();
             }
-        });
+        }));
     }
 
     private void OnSearchSimilar(Library library, string id, SearchMode mode)
@@ -82,9 +84,6 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     public void NavigateToSettings()
     {
-        CurrentPage = new SettingsViewModel(
-            _serviceProvider.GetRequiredService<ISettingsService>(),
-            _serviceProvider.GetRequiredService<ILmStudioClient>(),
-            NavigateToHome);
+        CurrentPage = ActivatorUtilities.CreateInstance<SettingsViewModel>(_serviceProvider, (Action)NavigateToHome);
     }
 }

@@ -17,6 +17,10 @@
                            Foreground="#1a1a1a"/>
                 <TextBlock Text="Add folder to start indexing and searching your images." 
                            Foreground="#666666"/>
+                <TextBlock Text="{Binding ErrorMessage}" 
+                           Foreground="Red" 
+                           FontSize="12"
+                           IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
             </StackPanel>
         </Border>
 
@@ -52,40 +56,64 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:LibraryViewModel">
-                            <Border Width="200" Height="240" 
+                            <Border Width="200" Height="240"
                                     Margin="0,0,20,20"
                                     Background="White"
                                     CornerRadius="16"
                                     BoxShadow="0 4 12 0 #0f000000"
                                     Cursor="Hand"
                                     ClipToBounds="True">
-                                <Button Command="{Binding ((vm:LibraryHomeViewModel)DataContext).OpenLibraryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                        CommandParameter="{Binding}"
-                                        Background="Transparent"
-                                        Padding="0"
-                                        HorizontalContentAlignment="Stretch"
-                                        VerticalContentAlignment="Stretch">
-                                    <Grid RowDefinitions="*,Auto">
-                                        <Border Grid.Row="0" Background="#f8f9fa">
-                                            <PathIcon Data="{StaticResource FolderIcon}" 
-                                                      Width="48" Height="48" 
+                                <Grid RowDefinitions="*,Auto">
+                                    <!-- Folder icon area - opens the library -->
+                                    <Button Grid.Row="0"
+                                            Command="{Binding ((vm:LibraryHomeViewModel)DataContext).OpenLibraryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            Background="Transparent"
+                                            Padding="0"
+                                            HorizontalContentAlignment="Stretch"
+                                            VerticalContentAlignment="Stretch">
+                                        <Border Background="#f8f9fa">
+                                            <PathIcon Data="{StaticResource FolderIcon}"
+                                                      Width="48" Height="48"
                                                       Foreground="#4a90e2"
                                                       Opacity="0.8"/>
                                         </Border>
-                                        
-                                        <Border Grid.Row="1" Padding="15">
-                                            <StackPanel Spacing="4">
-                                                <TextBlock Text="{Binding Name}" 
-                                                           FontWeight="SemiBold" 
-                                                           TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text="{Binding Path}" 
-                                                           FontSize="11" 
-                                                           Foreground="#999999" 
-                                                           TextTrimming="CharacterEllipsis"/>
-                                            </StackPanel>
-                                        </Border>
-                                    </Grid>
-                                </Button>
+                                    </Button>
+
+                                    <!-- Metadata row with remove button -->
+                                    <Border Grid.Row="1" Padding="12,10">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <!-- Clicking name/path also opens the library -->
+                                            <Button Command="{Binding ((vm:LibraryHomeViewModel)DataContext).OpenLibraryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Background="Transparent"
+                                                    Padding="0"
+                                                    HorizontalContentAlignment="Stretch"
+                                                    HorizontalAlignment="Stretch">
+                                                <StackPanel Spacing="3">
+                                                    <TextBlock Text="{Binding Name}"
+                                                               FontWeight="SemiBold"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding Path}"
+                                                               FontSize="11"
+                                                               Foreground="#999999"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                            </Button>
+
+                                            <!-- Remove button -->
+                                            <Button Grid.Column="1"
+                                                    Command="{Binding ((vm:LibraryHomeViewModel)DataContext).RemoveLibraryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Background="Transparent"
+                                                    Padding="4"
+                                                    VerticalAlignment="Top"
+                                                    ToolTip.Tip="Remove library">
+                                                <PathIcon Data="{StaticResource ErrorIcon}" Width="12" Height="12" Foreground="#cccccc"/>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
                             </Border>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>

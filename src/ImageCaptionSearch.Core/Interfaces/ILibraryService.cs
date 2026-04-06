@@ -23,6 +23,9 @@ public interface ILibraryService
     Task<IReadOnlyList<ProcessingJob>> GetActiveJobsAsync(Library library, CancellationToken ct = default);
     Task UpsertJobAsync(Library library, ProcessingJob job, CancellationToken ct = default);
     Task RemoveJobAsync(Library library, string imageId, CancellationToken ct = default);
+
+    // Resets all image statuses to Pending and clears all derived data (captions, embeddings, faces)
+    Task ResetLibraryIndexAsync(Library library, CancellationToken ct = default);
 }
 
 

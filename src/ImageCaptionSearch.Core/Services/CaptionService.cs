@@ -28,17 +28,21 @@ public class CaptionService : ICaptionService
         var fullPath = Path.Combine(libraryRoot, image.RelativePath);
         var imageBytes = await ReadAndResizeImageAsync(fullPath, 512, ct); 
 
-        var prompt = "Describe the attached image concisely. Output ONLY JSON with exactly two keys: " +
-                    "\"caption\" (a 8-30 word searchable description) and \"has_human\" (boolean, true if any real human or human body part is visible). " +
+        var prompt = "Describe the attached image in detail. Output ONLY JSON with exactly two keys: " +
+                    "\"caption\" (a searchable description covering subjects, setting, colors, mood, and notable details) " +
+                    "and \"has_human\" (boolean, true if any real human or human body part is visible). " +
                     "No markdown, no code fences, no commentary.";
 
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(TimeSpan.FromSeconds(settings.CaptionTimeoutSeconds));
+
         var rawResponse = await _client.GetChatCompletionAsync(
-            settings.LmStudioBaseUrl, 
-            settings.VisionModelId, 
-            prompt, 
-            imageBytes, 
+            settings.LmStudioBaseUrl,
+            settings.VisionModelId,
+            prompt,
+            imageBytes,
             false,
-            ct);
+            cts.Token);
 
         try 
         {
@@ -64,55 +68,54 @@ public class CaptionService : ICaptionService
 
     private static async Task<byte[]> ReadAndResizeImageAsync(string path, int maxSize, CancellationToken ct)
     {
-        return await Task.Run(() => 
+        return await Task.Run(() =>
         {
             using var fileStream = File.OpenRead(path);
             using var codec = SKCodec.Create(fileStream);
             if (codec == null) throw new InvalidOperationException("Failed to load image codec.");
 
-            var origin = codec.EncodedOrigin;
-            
             using var bitmap = SKBitmap.Decode(codec);
             if (bitmap == null) throw new InvalidOperationException("Failed to decode bitmap.");
 
-            using var oriented = ApplyOrientation(bitmap, origin);
+            // CreateRotated returns a new bitmap only when rotation is needed,
+            // so it is always safe to dispose independently of `bitmap`.
+            using var rotated = CreateRotatedBitmap(bitmap, codec.EncodedOrigin);
+            var working = rotated ?? bitmap;
 
-            if (oriented.Width > maxSize || oriented.Height > maxSize)
+            if (working.Width > maxSize || working.Height > maxSize)
             {
                 int width, height;
-                if (oriented.Width > oriented.Height)
+                if (working.Width > working.Height)
                 {
                     width = maxSize;
-                    height = (int)(oriented.Height * (float)maxSize / oriented.Width);
+                    height = (int)(working.Height * (float)maxSize / working.Width);
                 }
                 else
                 {
                     height = maxSize;
-                    width = (int)(oriented.Width * (float)maxSize / oriented.Height);
+                    width = (int)(working.Width * (float)maxSize / working.Height);
                 }
 
-                using var resized = oriented.Resize(new SKImageInfo(width, height), SKFilterQuality.Medium);
+                using var resized = working.Resize(new SKImageInfo(width, height), SKFilterQuality.Medium);
                 using var image = SKImage.FromBitmap(resized);
                 using var data = image.Encode(SKEncodedImageFormat.Jpeg, 85);
                 return data.ToArray();
             }
 
-            using var originalImage = SKImage.FromBitmap(oriented);
+            using var originalImage = SKImage.FromBitmap(working);
             using var originalData = originalImage.Encode(SKEncodedImageFormat.Jpeg, 85);
             return originalData.ToArray();
         }, ct);
     }
 
-    private static SKBitmap ApplyOrientation(SKBitmap bitmap, SKEncodedOrigin origin)
+    /// <summary>Returns a new rotated bitmap when the EXIF orientation requires it, or null if no rotation is needed.</summary>
+    private static SKBitmap? CreateRotatedBitmap(SKBitmap bitmap, SKEncodedOrigin origin) => origin switch
     {
-        switch (origin)
-        {
-            case SKEncodedOrigin.BottomRight: return Rotate(bitmap, 180);
-            case SKEncodedOrigin.RightTop: return Rotate(bitmap, 90);
-            case SKEncodedOrigin.LeftBottom: return Rotate(bitmap, 270);
-            default: return bitmap;
-        }
-    }
+        SKEncodedOrigin.BottomRight => Rotate(bitmap, 180),
+        SKEncodedOrigin.RightTop    => Rotate(bitmap, 90),
+        SKEncodedOrigin.LeftBottom  => Rotate(bitmap, 270),
+        _                           => null,
+    };
 
     private static SKBitmap Rotate(SKBitmap bitmap, int degrees)
     {
